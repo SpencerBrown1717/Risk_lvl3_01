@@ -1,619 +1,907 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Real Time Global Risk Management</title>
-<style>
-  * {
-    box-sizing: border-box;
-  }
-
-  html, body {
-    margin: 0;
-    width: 100%;
-    height: 100%;
-    background: #050505;
-    color: #fff;
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
-    overflow: hidden;
-  }
-
-  canvas {
-    display: block;
-  }
-
-  .overlay {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-  }
-
-  .title {
-    position: absolute;
-    top: 34px;
-    left: 50%;
-    transform: translateX(-50%);
-    text-align: center;
-    z-index: 10;
-  }
-
-  .title h1 {
-    margin: 0;
-    font-size: 30px;
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    opacity: 0.96;
-  }
-
-  .title p {
-    margin: 10px 0 0;
-    font-size: 13px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.55);
-  }
-
-  .hud-left,
-  .hud-right {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 10;
-    width: 200px;
-  }
-
-  .hud-left {
-    left: 34px;
-    text-align: left;
-  }
-
-  .hud-right {
-    right: 34px;
-    text-align: right;
-  }
-
-  .hud-label {
-    font-size: 11px;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.42);
-    margin-bottom: 10px;
-  }
-
-  .hud-value {
-    font-size: 15px;
-    letter-spacing: 0.08em;
-    color: rgba(255,255,255,0.92);
-    margin-bottom: 22px;
-  }
-
-  .footer {
-    position: absolute;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 14px;
-    z-index: 10;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .pill {
-    border: 1px solid rgba(255,255,255,0.14);
-    background: rgba(255,255,255,0.04);
-    color: rgba(255,255,255,0.78);
-    padding: 8px 12px;
-    border-radius: 999px;
-    font-size: 11px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    backdrop-filter: blur(8px);
-  }
-
-  .scanline {
-    position: absolute;
-    inset: 0;
-    background:
-      linear-gradient(
-        to bottom,
-        rgba(255,255,255,0.03) 0px,
-        rgba(255,255,255,0.01) 1px,
-        transparent 2px,
-        transparent 4px
-      );
-    opacity: 0.12;
-    mix-blend-mode: screen;
-  }
-
-  @media (max-width: 900px) {
-    .hud-left,
-    .hud-right {
-      display: none;
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Real Time Global Risk Management</title>
+  <style>
+    :root {
+      --bg: #050505;
+      --bg-soft: rgba(255,255,255,0.04);
+      --line: rgba(255,255,255,0.12);
+      --line-soft: rgba(255,255,255,0.07);
+      --text: rgba(255,255,255,0.96);
+      --text-soft: rgba(255,255,255,0.62);
+      --text-faint: rgba(255,255,255,0.38);
+      --panel: rgba(255,255,255,0.045);
+      --panel-border: rgba(255,255,255,0.10);
+      --glow: rgba(255,255,255,0.12);
+      --shadow: 0 10px 50px rgba(0,0,0,0.45);
     }
 
-    .title h1 {
-      font-size: 22px;
+    * {
+      box-sizing: border-box;
     }
 
-    .title p {
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--bg);
+      color: white;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif;
+      overflow: hidden;
+    }
+
+    body {
+      position: relative;
+      background:
+        radial-gradient(circle at 50% 45%, rgba(255,255,255,0.045), transparent 22%),
+        radial-gradient(circle at 50% 50%, rgba(255,255,255,0.02), transparent 55%),
+        linear-gradient(180deg, #080808 0%, #050505 45%, #030303 100%);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .topbar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: clamp(22px, 3vw, 38px) clamp(18px, 3vw, 36px) 0;
+      display: flex;
+      justify-content: center;
+    }
+
+    .title-wrap {
+      width: min(980px, 100%);
+      text-align: center;
+    }
+
+    .eyebrow {
       font-size: 11px;
-      letter-spacing: 0.14em;
-      padding: 0 18px;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      margin-bottom: 10px;
     }
 
-    .footer {
-      bottom: 18px;
+    .title {
+      margin: 0;
+      font-weight: 550;
+      font-size: clamp(28px, 4vw, 52px);
+      line-height: 1.02;
+      letter-spacing: 0.02em;
+      color: var(--text);
+      text-wrap: balance;
+    }
+
+    .subtitle {
+      margin: 14px auto 0;
+      max-width: 920px;
+      font-size: clamp(13px, 1.4vw, 17px);
+      line-height: 1.65;
+      color: var(--text-soft);
+      letter-spacing: 0.02em;
+      text-wrap: balance;
+    }
+
+    .side {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: min(240px, 24vw);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .side.left {
+      left: clamp(14px, 2vw, 28px);
+    }
+
+    .side.right {
+      right: clamp(14px, 2vw, 28px);
+    }
+
+    .panel {
+      background: linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.028));
+      border: 1px solid var(--panel-border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      padding: 14px 14px 13px;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+
+    .panel-label {
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      margin-bottom: 8px;
+    }
+
+    .panel-value {
+      font-size: clamp(14px, 1.15vw, 16px);
+      line-height: 1.45;
+      color: var(--text);
+    }
+
+    .bottom {
+      position: absolute;
+      left: 50%;
+      bottom: clamp(16px, 2vw, 28px);
+      transform: translateX(-50%);
+      width: min(1040px, calc(100% - 24px));
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
       gap: 10px;
-      padding: 0 14px;
+      max-width: 100%;
     }
 
     .pill {
+      padding: 9px 13px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.035);
+      color: rgba(255,255,255,0.78);
       font-size: 10px;
-      padding: 7px 10px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 6px 30px rgba(0,0,0,0.22);
+      white-space: nowrap;
     }
-  }
-</style>
+
+    .status-bar {
+      width: min(820px, 100%);
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .status {
+      border: 1px solid var(--line-soft);
+      background: rgba(255,255,255,0.028);
+      border-radius: 16px;
+      padding: 12px 14px;
+      text-align: center;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .status-k {
+      display: block;
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      margin-bottom: 7px;
+    }
+
+    .status-v {
+      display: block;
+      font-size: clamp(13px, 1vw, 15px);
+      color: var(--text);
+      line-height: 1.35;
+    }
+
+    .vignette,
+    .scanlines,
+    .noise {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .vignette {
+      background:
+        radial-gradient(circle at center, transparent 38%, rgba(0,0,0,0.20) 72%, rgba(0,0,0,0.42) 100%);
+      z-index: 1;
+    }
+
+    .scanlines {
+      background:
+        linear-gradient(
+          to bottom,
+          rgba(255,255,255,0.022) 0px,
+          rgba(255,255,255,0.008) 1px,
+          transparent 2px,
+          transparent 4px
+        );
+      opacity: 0.11;
+      mix-blend-mode: screen;
+      z-index: 3;
+    }
+
+    .noise {
+      opacity: 0.03;
+      background-image:
+        radial-gradient(rgba(255,255,255,0.7) 0.4px, transparent 0.4px);
+      background-size: 6px 6px;
+      z-index: 3;
+    }
+
+    @media (max-width: 1100px) {
+      .side {
+        width: 210px;
+      }
+    }
+
+    @media (max-width: 920px) {
+      .side {
+        display: none;
+      }
+
+      .bottom {
+        width: min(960px, calc(100% - 20px));
+      }
+
+      .status-bar {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 640px) {
+      .topbar {
+        padding-top: 18px;
+      }
+
+      .eyebrow {
+        font-size: 9px;
+        letter-spacing: 0.22em;
+      }
+
+      .subtitle {
+        max-width: 96%;
+        line-height: 1.5;
+      }
+
+      .legend {
+        gap: 8px;
+      }
+
+      .pill {
+        font-size: 9px;
+        padding: 8px 11px;
+        letter-spacing: 0.12em;
+      }
+
+      .status-bar {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+
+      .status {
+        padding: 10px 12px;
+      }
+    }
+  </style>
 </head>
 <body>
   <canvas id="scene"></canvas>
 
+  <div class="vignette"></div>
+
   <div class="overlay">
-    <div class="title">
-      <h1>Real Time Global Risk Management</h1>
-      <p>Agents monitor news, events, and markets to update positions, hedges, and warnings instantly</p>
+    <div class="topbar">
+      <div class="title-wrap">
+        <div class="eyebrow">Autonomous Market Intelligence</div>
+        <h1 class="title">Real Time Global Risk Management</h1>
+        <p class="subtitle">
+          Distributed agents monitor global news, macro events, and live markets, then reprice exposure,
+          deploy hedges, and escalate warnings the moment conditions change.
+        </p>
+      </div>
     </div>
 
-    <div class="hud-left">
-      <div class="hud-label">Global Inputs</div>
-      <div class="hud-value" id="inputCount">12,480 live signals</div>
-
-      <div class="hud-label">Active Risk Sweep</div>
-      <div class="hud-value" id="sweepStatus">Cross market correlation scan</div>
-
-      <div class="hud-label">Decision Engine</div>
-      <div class="hud-value" id="decisionStatus">Hedging and alert routing</div>
+    <div class="side left">
+      <div class="panel">
+        <div class="panel-label">Signal Ingestion</div>
+        <div class="panel-value" id="left1">14,920 live inputs across markets and events</div>
+      </div>
+      <div class="panel">
+        <div class="panel-label">Cross Market Analysis</div>
+        <div class="panel-value" id="left2">Correlation shifts and anomaly clusters under active review</div>
+      </div>
+      <div class="panel">
+        <div class="panel-label">Risk Coordination</div>
+        <div class="panel-value" id="left3">Agents routing hedges and warnings across portfolios</div>
+      </div>
     </div>
 
-    <div class="hud-right">
-      <div class="hud-label">Latency</div>
-      <div class="hud-value" id="latency">42 ms response</div>
-
-      <div class="hud-label">Exposure State</div>
-      <div class="hud-value" id="exposure">Continuously rebalanced</div>
-
-      <div class="hud-label">Alert Level</div>
-      <div class="hud-value" id="alertLevel">Elevated macro watch</div>
+    <div class="side right">
+      <div class="panel">
+        <div class="panel-label">Response Latency</div>
+        <div class="panel-value" id="right1">41 ms decision cycle</div>
+      </div>
+      <div class="panel">
+        <div class="panel-label">Exposure State</div>
+        <div class="panel-value" id="right2">Portfolio risk continuously rebalanced</div>
+      </div>
+      <div class="panel">
+        <div class="panel-label">Escalation Level</div>
+        <div class="panel-value" id="right3">Elevated macro and volatility watch</div>
+      </div>
     </div>
 
-    <div class="footer">
-      <div class="pill">News</div>
-      <div class="pill">Macro</div>
-      <div class="pill">FX</div>
-      <div class="pill">Rates</div>
-      <div class="pill">Equities</div>
-      <div class="pill">Commodities</div>
-      <div class="pill">Hedges</div>
-      <div class="pill">Warnings</div>
-    </div>
+    <div class="bottom">
+      <div class="legend">
+        <div class="pill">News</div>
+        <div class="pill">Geopolitics</div>
+        <div class="pill">Rates</div>
+        <div class="pill">FX</div>
+        <div class="pill">Equities</div>
+        <div class="pill">Credit</div>
+        <div class="pill">Commodities</div>
+        <div class="pill">Volatility</div>
+        <div class="pill">Hedges</div>
+        <div class="pill">Warnings</div>
+      </div>
 
-    <div class="scanline"></div>
+      <div class="status-bar">
+        <div class="status">
+          <span class="status-k">Signal Flow</span>
+          <span class="status-v" id="s1">Global event stream active</span>
+        </div>
+        <div class="status">
+          <span class="status-k">Inference</span>
+          <span class="status-v" id="s2">Risk engine repricing in real time</span>
+        </div>
+        <div class="status">
+          <span class="status-k">Hedging</span>
+          <span class="status-v" id="s3">Protective actions routing across books</span>
+        </div>
+        <div class="status">
+          <span class="status-k">Alerting</span>
+          <span class="status-v" id="s4">Escalations synchronized to decision makers</span>
+        </div>
+      </div>
+    </div>
   </div>
 
-<script>
-const canvas = document.getElementById("scene");
-const ctx = canvas.getContext("2d");
+  <div class="scanlines"></div>
+  <div class="noise"></div>
 
-let w = canvas.width = window.innerWidth;
-let h = canvas.height = window.innerHeight;
-let cx = w / 2;
-let cy = h / 2;
+  <script>
+    const canvas = document.getElementById("scene");
+    const ctx = canvas.getContext("2d");
 
-const globe = {
-  x: cx,
-  y: cy + 10,
-  r: Math.min(w, h) * 0.16
-};
+    let width = 0;
+    let height = 0;
+    let dpr = Math.min(window.devicePixelRatio || 1, 2);
 
-const nodes = [];
-const pulses = [];
-const arcs = [];
-const warnings = [];
+    const state = {
+      centerX: 0,
+      centerY: 0,
+      globeR: 0,
+      rings: [],
+      nodes: [],
+      pulses: [],
+      traces: [],
+      warnings: [],
+      stars: []
+    };
 
-const orbitBands = [1.55, 1.95, 2.35];
-const labels = [
-  "NEWS", "FX", "RATES", "INDEX", "VOL", "BONDS", "CREDIT", "OIL",
-  "GOLD", "SHIPPING", "POLICY", "EVENT", "RISK", "HEDGE", "ALERT", "FLOW"
-];
+    const labels = [
+      "NEWS", "FX", "RATES", "CREDIT", "VOL", "POLICY", "FLOW", "EVENT",
+      "ENERGY", "INDEX", "MACRO", "RISK", "HEDGE", "ALERT", "SHIPPING", "BONDS"
+    ];
 
-function resize() {
-  w = canvas.width = window.innerWidth;
-  h = canvas.height = window.innerHeight;
-  cx = w / 2;
-  cy = h / 2;
-  globe.x = cx;
-  globe.y = cy + 10;
-  globe.r = Math.min(w, h) * 0.16;
-  buildNodes();
-}
+    const hudSets = {
+      left1: [
+        "14,920 live inputs across markets and events",
+        "16,410 concurrent signals entering the system",
+        "13,880 live data points fused across regions",
+        "18,020 active feeds under continuous monitoring"
+      ],
+      left2: [
+        "Correlation shifts and anomaly clusters under active review",
+        "Shock propagation pathways being mapped in real time",
+        "Cross asset dependencies re-evaluated every cycle",
+        "Macro and market disruptions being scored continuously"
+      ],
+      left3: [
+        "Agents routing hedges and warnings across portfolios",
+        "Distributed systems coordinating protection and escalation",
+        "Execution pathways prioritized by emerging risk intensity",
+        "Response logic synchronizing positions and alerts"
+      ],
+      right1: [
+        "41 ms decision cycle",
+        "38 ms response time",
+        "46 ms signal to action",
+        "43 ms coordinated update latency"
+      ],
+      right2: [
+        "Portfolio risk continuously rebalanced",
+        "Exposure and hedge ratios updating live",
+        "Cross asset offsets adjusting in flight",
+        "Live protection logic active across positions"
+      ],
+      right3: [
+        "Elevated macro and volatility watch",
+        "Regional disruption pathway flagged",
+        "Fast moving market stress under review",
+        "Event driven escalation threshold raised"
+      ],
+      s1: [
+        "Global event stream active",
+        "Multi region monitoring online",
+        "News and market ingestion synchronized",
+        "Cross venue signal intake stable"
+      ],
+      s2: [
+        "Risk engine repricing in real time",
+        "Anomaly detection pipeline fully active",
+        "Scenario scoring converging continuously",
+        "Decision model evaluating second order effects"
+      ],
+      s3: [
+        "Protective actions routing across books",
+        "Hedge allocation logic responding instantly",
+        "Execution priorities recalibrated live",
+        "Defense posture adapting by region and asset"
+      ],
+      s4: [
+        "Escalations synchronized to decision makers",
+        "Warnings pushed as thresholds are crossed",
+        "Critical alerts prioritized by severity",
+        "Response chain aligned across teams"
+      ]
+    };
 
-function rand(min, max) {
-  return Math.random() * (max - min) + min;
-}
-
-function pick(arr) {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
-
-function buildNodes() {
-  nodes.length = 0;
-  const total = window.innerWidth < 900 ? 34 : 56;
-
-  for (let i = 0; i < total; i++) {
-    const band = orbitBands[i % orbitBands.length];
-    const angle = (Math.PI * 2 * i) / total + rand(-0.12, 0.12);
-    const radius = globe.r * band + rand(-18, 18);
-
-    nodes.push({
-      angle,
-      radius,
-      speed: rand(0.0008, 0.0022) * (Math.random() > 0.5 ? 1 : -1),
-      size: rand(2, 4.2),
-      type: Math.random() > 0.75 ? "risk" : "signal",
-      label: pick(labels),
-      pulseOffset: rand(0, Math.PI * 2)
-    });
-  }
-}
-
-function screenPos(node) {
-  return {
-    x: globe.x + Math.cos(node.angle) * node.radius,
-    y: globe.y + Math.sin(node.angle) * node.radius * 0.72
-  };
-}
-
-function spawnPulse() {
-  const node = pick(nodes);
-  const start = screenPos(node);
-
-  pulses.push({
-    fromX: start.x,
-    fromY: start.y,
-    toX: globe.x,
-    toY: globe.y,
-    t: 0,
-    speed: rand(0.015, 0.03),
-    size: rand(2.2, 4.8)
-  });
-}
-
-function spawnArc() {
-  const a = pick(nodes);
-  const b = pick(nodes);
-  if (a === b) return;
-
-  const p1 = screenPos(a);
-  const p2 = screenPos(b);
-
-  arcs.push({
-    x1: p1.x,
-    y1: p1.y,
-    x2: p2.x,
-    y2: p2.y,
-    life: 1,
-    decay: rand(0.008, 0.018)
-  });
-}
-
-function spawnWarning() {
-  warnings.push({
-    angle: rand(0, Math.PI * 2),
-    life: 1,
-    radius: globe.r + rand(14, 34)
-  });
-}
-
-function drawBackground() {
-  const gradient = ctx.createRadialGradient(cx, cy, globe.r * 0.25, cx, cy, Math.max(w, h) * 0.65);
-  gradient.addColorStop(0, "rgba(255,255,255,0.035)");
-  gradient.addColorStop(0.45, "rgba(255,255,255,0.015)");
-  gradient.addColorStop(1, "rgba(0,0,0,0)");
-
-  ctx.fillStyle = "#050505";
-  ctx.fillRect(0, 0, w, h);
-
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, w, h);
-}
-
-function drawGrid() {
-  ctx.save();
-  ctx.strokeStyle = "rgba(255,255,255,0.035)";
-  ctx.lineWidth = 1;
-
-  const gap = 48;
-  for (let x = 0; x < w; x += gap) {
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, h);
-    ctx.stroke();
-  }
-  for (let y = 0; y < h; y += gap) {
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(w, y);
-    ctx.stroke();
-  }
-  ctx.restore();
-}
-
-function drawOrbits(time) {
-  ctx.save();
-  orbitBands.forEach((band, i) => {
-    const r = globe.r * band;
-    ctx.beginPath();
-    ctx.ellipse(globe.x, globe.y, r, r * 0.72, 0, 0, Math.PI * 2);
-    ctx.strokeStyle = `rgba(255,255,255,${0.06 + i * 0.03})`;
-    ctx.lineWidth = 1;
-    ctx.stroke();
-  });
-
-  for (let i = 0; i < 3; i++) {
-    const rr = globe.r + (Math.sin(time * 0.0015 + i) + 1) * 18 + i * 18;
-    ctx.beginPath();
-    ctx.arc(globe.x, globe.y, rr, 0, Math.PI * 2);
-    ctx.strokeStyle = `rgba(255,255,255,${0.08 - i * 0.015})`;
-    ctx.lineWidth = 1;
-    ctx.stroke();
-  }
-  ctx.restore();
-}
-
-function drawGlobe(time) {
-  ctx.save();
-
-  const globeGradient = ctx.createRadialGradient(
-    globe.x - globe.r * 0.25,
-    globe.y - globe.r * 0.3,
-    globe.r * 0.15,
-    globe.x,
-    globe.y,
-    globe.r
-  );
-  globeGradient.addColorStop(0, "rgba(255,255,255,0.16)");
-  globeGradient.addColorStop(0.45, "rgba(255,255,255,0.07)");
-  globeGradient.addColorStop(1, "rgba(255,255,255,0.02)");
-
-  ctx.beginPath();
-  ctx.arc(globe.x, globe.y, globe.r, 0, Math.PI * 2);
-  ctx.fillStyle = globeGradient;
-  ctx.fill();
-  ctx.strokeStyle = "rgba(255,255,255,0.18)";
-  ctx.lineWidth = 1.2;
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.ellipse(globe.x, globe.y, globe.r, globe.r * 0.35, 0, 0, Math.PI * 2);
-  ctx.strokeStyle = "rgba(255,255,255,0.10)";
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.ellipse(globe.x, globe.y, globe.r * 0.55, globe.r, 0, 0, Math.PI * 2);
-  ctx.strokeStyle = "rgba(255,255,255,0.10)";
-  ctx.stroke();
-
-  for (let i = -2; i <= 2; i++) {
-    ctx.beginPath();
-    ctx.arc(globe.x, globe.y + i * globe.r * 0.25, globe.r * Math.cos(i * 0.42), 0, Math.PI * 2);
-    ctx.strokeStyle = "rgba(255,255,255,0.06)";
-    ctx.stroke();
-  }
-
-  const sweep = time * 0.0012;
-  ctx.beginPath();
-  ctx.moveTo(globe.x, globe.y);
-  ctx.arc(globe.x, globe.y, globe.r * 1.15, sweep, sweep + 0.22);
-  ctx.closePath();
-  ctx.fillStyle = "rgba(255,255,255,0.035)";
-  ctx.fill();
-
-  ctx.restore();
-}
-
-function drawNodes(time) {
-  ctx.save();
-
-  nodes.forEach((node, idx) => {
-    node.angle += node.speed;
-
-    const p = screenPos(node);
-    const pulse = 0.55 + 0.45 * Math.sin(time * 0.003 + node.pulseOffset);
-
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, node.size + pulse * 1.2, 0, Math.PI * 2);
-    ctx.fillStyle = node.type === "risk"
-      ? `rgba(255,255,255,${0.18 + pulse * 0.15})`
-      : `rgba(255,255,255,${0.12 + pulse * 0.16})`;
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, node.size * 0.55, 0, Math.PI * 2);
-    ctx.fillStyle = "#ffffff";
-    ctx.fill();
-
-    if (idx % 7 === 0) {
-      ctx.font = "10px -apple-system, BlinkMacSystemFont, sans-serif";
-      ctx.fillStyle = "rgba(255,255,255,0.45)";
-      ctx.textAlign = "center";
-      ctx.fillText(node.label, p.x, p.y - 12);
+    function rand(min, max) {
+      return Math.random() * (max - min) + min;
     }
 
-    ctx.beginPath();
-    ctx.moveTo(p.x, p.y);
-    ctx.lineTo(globe.x, globe.y);
-    ctx.strokeStyle = "rgba(255,255,255,0.055)";
-    ctx.lineWidth = 1;
-    ctx.stroke();
-  });
-
-  ctx.restore();
-}
-
-function drawArcs() {
-  ctx.save();
-  arcs.forEach((arc, i) => {
-    arc.life -= arc.decay;
-    if (arc.life <= 0) {
-      arcs.splice(i, 1);
-      return;
+    function pick(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
     }
 
-    const mx = (arc.x1 + arc.x2) / 2;
-    const my = (arc.y1 + arc.y2) / 2 - 40;
+    function setCanvasSize() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
 
-    ctx.beginPath();
-    ctx.moveTo(arc.x1, arc.y1);
-    ctx.quadraticCurveTo(mx, my, arc.x2, arc.y2);
-    ctx.strokeStyle = `rgba(255,255,255,${arc.life * 0.22})`;
-    ctx.lineWidth = 1.2;
-    ctx.stroke();
-  });
-  ctx.restore();
-}
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      canvas.style.width = width + "px";
+      canvas.style.height = height + "px";
 
-function drawPulses() {
-  ctx.save();
-  pulses.forEach((pulse, i) => {
-    pulse.t += pulse.speed;
-    if (pulse.t >= 1) {
-      pulses.splice(i, 1);
-      return;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      state.centerX = width * 0.5;
+      state.centerY = height * 0.56;
+      state.globeR = Math.min(width, height) * (width < 700 ? 0.18 : 0.16);
+
+      const base = state.globeR;
+      state.rings = [
+        { rx: base * 1.55, ry: base * 1.05 },
+        { rx: base * 1.95, ry: base * 1.32 },
+        { rx: base * 2.38, ry: base * 1.60 }
+      ];
+
+      buildStars();
+      buildNodes();
     }
 
-    const x = pulse.fromX + (pulse.toX - pulse.fromX) * pulse.t;
-    const y = pulse.fromY + (pulse.toY - pulse.fromY) * pulse.t;
+    function buildStars() {
+      state.stars = [];
+      const count = width < 700 ? 60 : 110;
 
-    ctx.beginPath();
-    ctx.arc(x, y, pulse.size, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(255,255,255,${0.45 * (1 - pulse.t) + 0.25})`;
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.arc(x, y, pulse.size * 2.3, 0, Math.PI * 2);
-    ctx.strokeStyle = `rgba(255,255,255,${0.18 * (1 - pulse.t)})`;
-    ctx.lineWidth = 1;
-    ctx.stroke();
-  });
-  ctx.restore();
-}
-
-function drawWarnings() {
-  ctx.save();
-  warnings.forEach((w, i) => {
-    w.life -= 0.01;
-    if (w.life <= 0) {
-      warnings.splice(i, 1);
-      return;
+      for (let i = 0; i < count; i++) {
+        state.stars.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          a: rand(0.08, 0.4),
+          r: rand(0.5, 1.4),
+          tw: rand(0.001, 0.004)
+        });
+      }
     }
 
-    const x = globe.x + Math.cos(w.angle) * w.radius;
-    const y = globe.y + Math.sin(w.angle) * w.radius * 0.72;
+    function buildNodes() {
+      state.nodes = [];
+      const count = width < 700 ? 28 : width < 1100 ? 40 : 54;
 
-    ctx.beginPath();
-    ctx.arc(x, y, 8 + (1 - w.life) * 12, 0, Math.PI * 2);
-    ctx.strokeStyle = `rgba(255,255,255,${w.life * 0.35})`;
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
+      for (let i = 0; i < count; i++) {
+        const ringIndex = i % state.rings.length;
+        const ring = state.rings[ringIndex];
 
-    ctx.beginPath();
-    ctx.arc(x, y, 2.2, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(255,255,255,${w.life * 0.9})`;
-    ctx.fill();
-  });
-  ctx.restore();
-}
+        state.nodes.push({
+          ringIndex,
+          angle: (Math.PI * 2 * i) / count + rand(-0.14, 0.14),
+          speed: rand(0.0008, 0.0022) * (Math.random() > 0.5 ? 1 : -1),
+          size: rand(2, 4.2),
+          glow: rand(0.15, 0.8),
+          label: pick(labels),
+          labelOffset: Math.random() * Math.PI * 2,
+          type: Math.random() > 0.78 ? "warning" : "signal",
+          drift: rand(-0.04, 0.04),
+          ring
+        });
+      }
+    }
 
-const leftStats = [
-  "12,480 live signals",
-  "16,240 live signals",
-  "14,920 live signals",
-  "18,110 live signals"
-];
+    function nodePosition(node) {
+      const ring = state.rings[node.ringIndex];
+      return {
+        x: state.centerX + Math.cos(node.angle) * ring.rx,
+        y: state.centerY + Math.sin(node.angle) * ring.ry
+      };
+    }
 
-const sweepStats = [
-  "Cross market correlation scan",
-  "Macro shock propagation map",
-  "Event clustering and anomaly review",
-  "Volatility transmission analysis"
-];
+    function spawnPulse() {
+      if (!state.nodes.length) return;
 
-const decisionStats = [
-  "Hedging and alert routing",
-  "Position adjustment engine live",
-  "News to execution pathway active",
-  "Risk repricing in motion"
-];
+      const fromNode = pick(state.nodes);
+      const pos = nodePosition(fromNode);
 
-const latencyStats = [
-  "42 ms response",
-  "37 ms response",
-  "51 ms response",
-  "44 ms response"
-];
+      state.pulses.push({
+        fromX: pos.x,
+        fromY: pos.y,
+        toX: state.centerX,
+        toY: state.centerY,
+        t: 0,
+        speed: rand(0.014, 0.026),
+        size: rand(2.2, 4.6),
+        alpha: rand(0.45, 0.9)
+      });
+    }
 
-const exposureStats = [
-  "Continuously rebalanced",
-  "Hedge ratios updating",
-  "Portfolio stress reduced",
-  "Cross asset offsets active"
-];
+    function spawnTrace() {
+      if (state.nodes.length < 2) return;
 
-const alertStats = [
-  "Elevated macro watch",
-  "Regional disruption flagged",
-  "Volatility spike detected",
-  "Event risk intensifying"
-];
+      let a = pick(state.nodes);
+      let b = pick(state.nodes);
+      if (a === b) return;
 
-let statTimer = 0;
+      const p1 = nodePosition(a);
+      const p2 = nodePosition(b);
 
-function updateHud(time) {
-  if (time - statTimer > 2400) {
-    statTimer = time;
-    document.getElementById("inputCount").textContent = pick(leftStats);
-    document.getElementById("sweepStatus").textContent = pick(sweepStats);
-    document.getElementById("decisionStatus").textContent = pick(decisionStats);
-    document.getElementById("latency").textContent = pick(latencyStats);
-    document.getElementById("exposure").textContent = pick(exposureStats);
-    document.getElementById("alertLevel").textContent = pick(alertStats);
-  }
-}
+      state.traces.push({
+        x1: p1.x,
+        y1: p1.y,
+        x2: p2.x,
+        y2: p2.y,
+        cx: (p1.x + p2.x) / 2 + rand(-26, 26),
+        cy: (p1.y + p2.y) / 2 - rand(18, 52),
+        life: 1,
+        decay: rand(0.01, 0.02)
+      });
+    }
 
-function animate(time) {
-  drawBackground();
-  drawGrid();
-  drawOrbits(time);
-  drawArcs();
-  drawNodes(time);
-  drawPulses();
-  drawWarnings();
-  drawGlobe(time);
-  updateHud(time);
+    function spawnWarning() {
+      const angle = rand(0, Math.PI * 2);
+      const radiusX = state.globeR * rand(1.18, 1.5);
+      const radiusY = state.globeR * rand(0.95, 1.22);
 
-  if (Math.random() < 0.16) spawnPulse();
-  if (Math.random() < 0.045) spawnArc();
-  if (Math.random() < 0.02) spawnWarning();
+      state.warnings.push({
+        angle,
+        rx: radiusX,
+        ry: radiusY,
+        life: 1,
+        growth: rand(0.65, 1.2)
+      });
+    }
 
-  requestAnimationFrame(animate);
-}
+    function drawBackdrop(time) {
+      ctx.clearRect(0, 0, width, height);
 
-buildNodes();
-animate(0);
+      const radial = ctx.createRadialGradient(
+        state.centerX,
+        state.centerY,
+        state.globeR * 0.2,
+        state.centerX,
+        state.centerY,
+        Math.max(width, height) * 0.65
+      );
+      radial.addColorStop(0, "rgba(255,255,255,0.04)");
+      radial.addColorStop(0.28, "rgba(255,255,255,0.015)");
+      radial.addColorStop(1, "rgba(255,255,255,0)");
 
-window.addEventListener("resize", resize);
-</script>
+      ctx.fillStyle = radial;
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.save();
+      for (const star of state.stars) {
+        const twinkle = star.a + Math.sin(time * star.tw) * 0.08;
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${twinkle})`;
+        ctx.fill();
+      }
+      ctx.restore();
+
+      ctx.save();
+      ctx.strokeStyle = "rgba(255,255,255,0.03)";
+      ctx.lineWidth = 1;
+
+      const gap = width < 700 ? 52 : 58;
+      for (let x = 0; x < width; x += gap) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+      }
+      for (let y = 0; y < height; y += gap) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawRings(time) {
+      ctx.save();
+
+      state.rings.forEach((ring, i) => {
+        ctx.beginPath();
+        ctx.ellipse(state.centerX, state.centerY, ring.rx, ring.ry, 0, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(255,255,255,${0.06 + i * 0.03})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      });
+
+      for (let i = 0; i < 4; i++) {
+        const pulse = (Math.sin(time * 0.0015 + i * 0.8) + 1) * 0.5;
+        const r = state.globeR * (1.08 + i * 0.12 + pulse * 0.04);
+
+        ctx.beginPath();
+        ctx.arc(state.centerX, state.centerY, r, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(255,255,255,${0.03 + (0.06 - i * 0.01)})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    }
+
+    function drawGlobe(time) {
+      ctx.save();
+
+      const g = ctx.createRadialGradient(
+        state.centerX - state.globeR * 0.26,
+        state.centerY - state.globeR * 0.28,
+        state.globeR * 0.15,
+        state.centerX,
+        state.centerY,
+        state.globeR
+      );
+      g.addColorStop(0, "rgba(255,255,255,0.18)");
+      g.addColorStop(0.42, "rgba(255,255,255,0.075)");
+      g.addColorStop(1, "rgba(255,255,255,0.02)");
+
+      ctx.beginPath();
+      ctx.arc(state.centerX, state.centerY, state.globeR, 0, Math.PI * 2);
+      ctx.fillStyle = g;
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,0.17)";
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.ellipse(state.centerX, state.centerY, state.globeR, state.globeR * 0.34, 0, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(255,255,255,0.09)";
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.ellipse(state.centerX, state.centerY, state.globeR * 0.55, state.globeR, 0, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(255,255,255,0.09)";
+      ctx.stroke();
+
+      for (let i = -2; i <= 2; i++) {
+        const rr = state.globeR * Math.cos(i * 0.4);
+        if (rr > 2) {
+          ctx.beginPath();
+          ctx.arc(state.centerX, state.centerY + i * state.globeR * 0.24, rr, 0, Math.PI * 2);
+          ctx.strokeStyle = "rgba(255,255,255,0.055)";
+          ctx.stroke();
+        }
+      }
+
+      const sweepAngle = time * 0.001;
+      ctx.beginPath();
+      ctx.moveTo(state.centerX, state.centerY);
+      ctx.arc(state.centerX, state.centerY, state.globeR * 1.16, sweepAngle, sweepAngle + 0.25);
+      ctx.closePath();
+      ctx.fillStyle = "rgba(255,255,255,0.035)";
+      ctx.fill();
+
+      const innerPulse = 0.6 + Math.sin(time * 0.003) * 0.08;
+      ctx.beginPath();
+      ctx.arc(state.centerX, state.centerY, state.globeR * innerPulse * 0.18, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(255,255,255,0.92)";
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(state.centerX, state.centerY, state.globeR * innerPulse * 0.33, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(255,255,255,0.12)";
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    function drawNodes(time) {
+      ctx.save();
+
+      state.nodes.forEach((node, index) => {
+        node.angle += node.speed;
+
+        const p = nodePosition(node);
+        const pulse = 0.55 + 0.45 * Math.sin(time * 0.003 + node.labelOffset);
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, node.size + pulse * 1.25, 0, Math.PI * 2);
+        ctx.fillStyle = node.type === "warning"
+          ? `rgba(255,255,255,${0.14 + pulse * 0.18})`
+          : `rgba(255,255,255,${0.11 + pulse * 0.14})`;
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, Math.max(1.2, node.size * 0.55), 0, Math.PI * 2);
+        ctx.fillStyle = "#ffffff";
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(state.centerX, state.centerY);
+        ctx.strokeStyle = "rgba(255,255,255,0.045)";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        if (width > 760 && index % 8 === 0) {
+          ctx.font = "10px -apple-system, BlinkMacSystemFont, sans-serif";
+          ctx.fillStyle = "rgba(255,255,255,0.42)";
+          ctx.textAlign = "center";
+          ctx.fillText(node.label, p.x, p.y - 12);
+        }
+      });
+
+      ctx.restore();
+    }
+
+    function drawTraces() {
+      ctx.save();
+
+      for (let i = state.traces.length - 1; i >= 0; i--) {
+        const t = state.traces[i];
+        t.life -= t.decay;
+
+        if (t.life <= 0) {
+          state.traces.splice(i, 1);
+          continue;
+        }
+
+        ctx.beginPath();
+        ctx.moveTo(t.x1, t.y1);
+        ctx.quadraticCurveTo(t.cx, t.cy, t.x2, t.y2);
+        ctx.strokeStyle = `rgba(255,255,255,${t.life * 0.18})`;
+        ctx.lineWidth = 1.15;
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    }
+
+    function drawPulses() {
+      ctx.save();
+
+      for (let i = state.pulses.length - 1; i >= 0; i--) {
+        const p = state.pulses[i];
+        p.t += p.speed;
+
+        if (p.t >= 1) {
+          state.pulses.splice(i, 1);
+          continue;
+        }
+
+        const x = p.fromX + (p.toX - p.fromX) * p.t;
+        const y = p.fromY + (p.toY - p.fromY) * p.t;
+        const alpha = p.alpha * (1 - p.t * 0.35);
+
+        ctx.beginPath();
+        ctx.arc(x, y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(x, y, p.size * 2.4, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(255,255,255,${alpha * 0.22})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    }
+
+    function drawWarnings() {
+      ctx.save();
+
+      for (let i = state.warnings.length - 1; i >= 0; i--) {
+        const w = state.warnings[i];
+        w.life -= 0.012;
+
+        if (w.life <= 0) {
+          state.warnings.splice(i, 1);
+          continue;
+        }
+
+        const x = state.centerX + Math.cos(w.angle) * w.rx;
+        const y = state.centerY + Math.sin(w.angle) * w.ry;
+        const rr = 8 + (1 - w.life) * 18 * w.growth;
+
+        ctx.beginPath();
+        ctx.arc(x, y, rr, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(255,255,255,${w.life * 0.28})`;
+        ctx.lineWidth = 1.4;
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(x, y, 2.1, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${w.life * 0.9})`;
+        ctx.fill();
+      }
+
+      ctx.restore();
+    }
+
+    let hudTimer = 0;
+
+    function updateHud(time) {
+      if (time - hudTimer < 2400) return;
+      hudTimer = time;
+
+      for (const id in hudSets) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = pick(hudSets[id]);
+      }
+    }
+
+    function animate(time) {
+      drawBackdrop(time);
+      drawRings(time);
+      drawTraces();
+      drawNodes(time);
+      drawPulses();
+      drawWarnings();
+      drawGlobe(time);
+      updateHud(time);
+
+      if (Math.random() < 0.17) spawnPulse();
+      if (Math.random() < 0.05) spawnTrace();
+      if (Math.random() < 0.018) spawnWarning();
+
+      requestAnimationFrame(animate);
+    }
+
+    window.addEventListener("resize", setCanvasSize);
+
+    setCanvasSize();
+    requestAnimationFrame(animate);
+  </script>
 </body>
 </html>
