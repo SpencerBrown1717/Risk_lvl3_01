@@ -1,907 +1,1658 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Real Time Global Risk Management</title>
-  <style>
-    :root {
-      --bg: #050505;
-      --bg-soft: rgba(255,255,255,0.04);
-      --line: rgba(255,255,255,0.12);
-      --line-soft: rgba(255,255,255,0.07);
-      --text: rgba(255,255,255,0.96);
-      --text-soft: rgba(255,255,255,0.62);
-      --text-faint: rgba(255,255,255,0.38);
-      --panel: rgba(255,255,255,0.045);
-      --panel-border: rgba(255,255,255,0.10);
-      --glow: rgba(255,255,255,0.12);
-      --shadow: 0 10px 50px rgba(0,0,0,0.45);
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Real-Time Global Risk Management · Level 3 AI</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #03050b;
+    --bg-2: #070b14;
+    --bg-3: #0d1422;
+    --panel: rgba(12, 18, 30, 0.7);
+    --panel-strong: rgba(15, 22, 36, 0.84);
+    --border: rgba(110, 140, 255, 0.08);
+    --border-strong: rgba(120, 160, 255, 0.16);
+
+    --teal: #14ffc4;
+    --teal-soft: #10cfa1;
+    --cyan: #00d9ff;
+    --violet: #a855f7;
+    --violet-soft: #7c3aed;
+    --gold: #fbbf24;
+    --gold-soft: #f59e0b;
+    --alert: #ff4d4d;
+    --alert-soft: #ff7a5c;
+
+    --text: #edf3fb;
+    --text-dim: #96a3bb;
+    --text-faint: #536179;
+
+    --shadow-soft: 0 10px 40px rgba(0, 0, 0, 0.22);
+    --shadow-panel: 0 18px 60px rgba(0, 0, 0, 0.28);
+    --shadow-glow: 0 0 40px rgba(20, 255, 196, 0.08);
+
+    --radius: 18px;
+    --radius-sm: 10px;
+  }
+
+  html, body { height: 100%; }
+
+  body {
+    background:
+      radial-gradient(circle at 18% 0%, rgba(20, 255, 196, 0.06), transparent 34%),
+      radial-gradient(circle at 100% 100%, rgba(168, 85, 247, 0.08), transparent 34%),
+      radial-gradient(circle at 52% 48%, rgba(0, 217, 255, 0.035), transparent 40%),
+      linear-gradient(180deg, #04070f 0%, #02040a 100%);
+    color: var(--text);
+    font-family: "SF Pro Display", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    font-size: 13px;
+    line-height: 1.4;
+    overflow: hidden;
+    position: relative;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(120, 150, 255, 0.028) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(120, 150, 255, 0.028) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.85), transparent 88%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.015), transparent 14%, transparent 86%, rgba(255,255,255,0.01));
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .ambient {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+
+  .ambient .dot {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    border-radius: 50%;
+    opacity: 0.28;
+    animation: drift linear infinite;
+    box-shadow: 0 0 6px currentColor;
+  }
+
+  @keyframes drift {
+    from { transform: translateY(105vh) translateX(0); opacity: 0; }
+    10% { opacity: 0.4; }
+    90% { opacity: 0.34; }
+    to { transform: translateY(-8vh) translateX(24px); opacity: 0; }
+  }
+
+  .scene {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    height: 100vh;
+    padding: 14px;
+    gap: 14px;
+  }
+
+  .top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 18px;
+    padding: 18px 22px;
+    background: linear-gradient(180deg, rgba(10, 14, 23, 0.84), rgba(7, 10, 18, 0.72));
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-panel), inset 0 1px 0 rgba(255,255,255,0.03);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    min-width: 0;
+  }
+
+  .live-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    color: var(--alert);
+    padding: 6px 11px;
+    background: rgba(255, 77, 77, 0.08);
+    border: 1px solid rgba(255, 77, 77, 0.28);
+    border-radius: 999px;
+    box-shadow: inset 0 0 14px rgba(255, 77, 77, 0.04);
+    flex-shrink: 0;
+  }
+
+  .pulse-dot {
+    width: 7px;
+    height: 7px;
+    background: var(--alert);
+    border-radius: 50%;
+    animation: live-pulse 1.4s ease-in-out infinite;
+    box-shadow: 0 0 12px var(--alert);
+  }
+
+  @keyframes live-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.35; transform: scale(1.4); }
+  }
+
+  .title-block {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .eyebrow {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.24em;
+    color: var(--text-faint);
+    text-transform: uppercase;
+  }
+
+  .title-row {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .title-row h1 {
+    font-size: clamp(18px, 2vw, 30px);
+    line-height: 1.05;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+
+  .title-row h1 strong {
+    font-weight: 700;
+    background: linear-gradient(90deg, var(--teal), var(--cyan));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .subtitle {
+    font-size: 12px;
+    color: var(--text-dim);
+    max-width: 760px;
+    line-height: 1.55;
+  }
+
+  .meta {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(88px, auto));
+    gap: 20px;
+    flex-shrink: 0;
+  }
+
+  .meta-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+
+  .meta-label {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: var(--text-faint);
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .meta-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--teal);
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 0 16px rgba(20, 255, 196, 0.24);
+  }
+
+  .meta-value.violet {
+    color: var(--violet);
+    text-shadow: 0 0 16px rgba(168, 85, 247, 0.24);
+  }
+
+  .meta-value.gold {
+    color: var(--gold);
+    text-shadow: 0 0 16px rgba(251, 191, 36, 0.24);
+  }
+
+  .meta-value .unit {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-left: 2px;
+    font-weight: 500;
+  }
+
+  .main {
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(270px, 320px) minmax(0, 1fr) minmax(290px, 340px);
+    gap: 14px;
+  }
+
+  .panel {
+    background:
+      linear-gradient(180deg, rgba(14, 20, 32, 0.88), rgba(9, 14, 24, 0.84));
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-panel), inset 0 1px 0 rgba(255,255,255,0.03);
+    padding: 18px 16px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .panel-header {
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    color: var(--text-dim);
+    font-weight: 700;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    text-transform: uppercase;
+  }
+
+  .panel-header .tag { color: var(--teal); font-size: 9px; }
+  .panel-header .tag.alert { color: var(--alert); }
+  .panel-header .tag.violet { color: var(--violet); }
+  .panel-header .count {
+    margin-left: auto;
+    color: var(--text-faint);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+
+  .feed {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: auto;
+    min-height: 0;
+    padding-right: 2px;
+    scrollbar-width: none;
+  }
+
+  .feed::-webkit-scrollbar { display: none; }
+
+  .feed-item {
+    padding: 11px 12px 12px;
+    background: rgba(16, 24, 39, 0.66);
+    border: 1px solid rgba(120, 150, 255, 0.08);
+    border-left: 2px solid var(--teal);
+    border-radius: 12px;
+    animation: slide-in 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: opacity 0.4s, transform 0.2s, background 0.2s;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
+  }
+
+  .feed-item:hover {
+    transform: translateY(-1px);
+    background: rgba(18, 27, 43, 0.72);
+  }
+
+  .feed-item.sev-high {
+    border-left-color: var(--alert);
+    background: rgba(255, 77, 77, 0.05);
+  }
+
+  .feed-item.sev-med {
+    border-left-color: var(--gold);
+  }
+
+  .feed-item.sev-low {
+    border-left-color: var(--teal);
+  }
+
+  @keyframes slide-in {
+    from { opacity: 0; transform: translateX(-18px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .feed-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-size: 9.5px;
+  }
+
+  .feed-tag {
+    color: var(--teal);
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    padding: 3px 6px;
+    background: rgba(20, 255, 196, 0.08);
+    border-radius: 999px;
+  }
+
+  .sev-high .feed-tag {
+    color: var(--alert);
+    background: rgba(255, 77, 77, 0.1);
+  }
+
+  .sev-med .feed-tag {
+    color: var(--gold);
+    background: rgba(251, 191, 36, 0.08);
+  }
+
+  .feed-city {
+    color: var(--text-dim);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+  }
+
+  .feed-time {
+    color: var(--text-faint);
+    margin-left: auto;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.05em;
+  }
+
+  .feed-text {
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  .map-wrap {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius) + 2px);
+    background:
+      radial-gradient(circle at 50% 50%, rgba(20, 255, 196, 0.04), transparent 40%),
+      linear-gradient(180deg, rgba(12, 18, 30, 0.95), rgba(8, 12, 22, 0.95));
+    box-shadow: var(--shadow-panel), inset 0 1px 0 rgba(255,255,255,0.03), var(--shadow-glow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+  }
+
+  .map-wrap::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 50% 50%, rgba(255,255,255,0.015), transparent 58%);
+    pointer-events: none;
+  }
+
+  .map-wrap::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.03), transparent 18%, transparent 82%, rgba(255,255,255,0.02));
+    pointer-events: none;
+  }
+
+  .world-map {
+    width: 100%;
+    height: 100%;
+    max-height: 100%;
+    display: block;
+  }
+
+  .map-label,
+  .map-coords,
+  .map-legend,
+  .map-caption {
+    position: absolute;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .map-label {
+    top: 18px;
+    left: 20px;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    color: var(--text-faint);
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .map-label b { color: var(--text-dim); font-weight: 700; }
+
+  .map-caption {
+    top: 40px;
+    left: 20px;
+    max-width: 300px;
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  .map-coords {
+    bottom: 18px;
+    left: 20px;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    color: var(--text-faint);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .map-legend {
+    bottom: 18px;
+    right: 20px;
+    display: flex;
+    gap: 18px;
+    font-size: 9.5px;
+    letter-spacing: 0.14em;
+    color: var(--text-faint);
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .map-legend span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .legend-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+  }
+
+  .map-dot { fill: rgba(120, 150, 200, 0.28); }
+  .map-dot.land { fill: rgba(180, 200, 240, 0.34); }
+
+  .city-dot {
+    fill: var(--teal);
+    filter: drop-shadow(0 0 5px var(--teal));
+  }
+
+  .city-ring {
+    fill: none;
+    stroke: var(--teal);
+    stroke-width: 0.45;
+    opacity: 0.5;
+  }
+
+  .pulse-ring {
+    fill: none;
+    stroke-width: 1.2;
+    animation: pulse-expand 1.9s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  }
+
+  .pulse-ring.high { stroke: var(--alert); }
+  .pulse-ring.med { stroke: var(--gold); }
+  .pulse-ring.low { stroke: var(--teal); }
+
+  @keyframes pulse-expand {
+    0% { r: 3; opacity: 1; stroke-width: 1.5; }
+    100% { r: 42; opacity: 0; stroke-width: 0.2; }
+  }
+
+  .connection {
+    stroke-width: 0.6;
+    fill: none;
+    stroke-dasharray: 4 4;
+    opacity: 0;
+    animation: conn-fade 1.8s ease-out forwards;
+  }
+
+  .connection.high { stroke: var(--alert); }
+  .connection.med { stroke: var(--gold); }
+  .connection.low { stroke: var(--teal); }
+
+  @keyframes conn-fade {
+    0% { opacity: 0; stroke-dashoffset: 30; }
+    30% { opacity: 0.6; }
+    100% { opacity: 0; stroke-dashoffset: 0; }
+  }
+
+  .data-particle {
+    filter: drop-shadow(0 0 6px currentColor);
+  }
+
+  .data-particle.high { fill: var(--alert); color: var(--alert); }
+  .data-particle.med { fill: var(--gold); color: var(--gold); }
+  .data-particle.low { fill: var(--teal); color: var(--teal); }
+
+  .hub-aura {
+    fill: url(#hubGradient);
+    animation: aura-breathe 4s ease-in-out infinite;
+  }
+
+  @keyframes aura-breathe {
+    0%, 100% { opacity: 0.56; }
+    50% { opacity: 0.88; }
+  }
+
+  .hub-rotor {
+    fill: none;
+    stroke: rgba(20, 255, 196, 0.26);
+    stroke-width: 0.7;
+    transform-origin: center;
+    transform-box: fill-box;
+  }
+
+  .hub-rotor.r1 { animation: rotate 24s linear infinite; }
+  .hub-rotor.r2 { animation: rotate 38s linear infinite reverse; }
+
+  @keyframes rotate {
+    to { transform: rotate(360deg); }
+  }
+
+  .hub-ring-outer {
+    fill: none;
+    stroke: var(--teal);
+    stroke-width: 0.9;
+    opacity: 0.62;
+  }
+
+  .hub-ring-inner {
+    fill: none;
+    stroke: var(--teal);
+    stroke-width: 1.25;
+    opacity: 0.92;
+  }
+
+  .hub-core {
+    fill: var(--teal);
+    opacity: 0.36;
+    filter: drop-shadow(0 0 20px var(--teal));
+    animation: hub-pulse 2.3s ease-in-out infinite;
+  }
+
+  @keyframes hub-pulse {
+    0%, 100% { opacity: 0.35; }
+    50% { opacity: 0.68; }
+  }
+
+  .hub-center {
+    fill: white;
+    filter: drop-shadow(0 0 10px var(--teal));
+  }
+
+  .hub-burst {
+    fill: none;
+    stroke: var(--teal);
+    stroke-width: 1.5;
+    animation: hub-burst 0.95s ease-out forwards;
+  }
+
+  @keyframes hub-burst {
+    0% { r: 14; opacity: 0.8; stroke-width: 2; }
+    100% { r: 40; opacity: 0; stroke-width: 0.3; }
+  }
+
+  .hub-label {
+    fill: var(--text-dim);
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    font-weight: 700;
+    text-anchor: middle;
+    font-family: inherit;
+  }
+
+  .hub-label.glow {
+    fill: var(--teal);
+    filter: drop-shadow(0 0 4px var(--teal));
+  }
+
+  #warning-banner {
+    position: absolute;
+    top: 22px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-24px);
+    padding: 12px 22px;
+    background: rgba(255, 77, 77, 0.12);
+    border: 1px solid var(--alert);
+    color: var(--alert);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    border-radius: 999px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s, transform 0.3s;
+    box-shadow: 0 0 28px rgba(255, 77, 77, 0.22), inset 0 0 20px rgba(255, 77, 77, 0.05);
+    z-index: 3;
+    backdrop-filter: blur(8px);
+    white-space: nowrap;
+    max-width: calc(100% - 48px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  #warning-banner.active {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  #warning-banner .b-tag {
+    display: inline-block;
+    margin-right: 10px;
+    padding: 3px 7px;
+    background: var(--alert);
+    color: var(--bg);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    border-radius: 999px;
+  }
+
+  .section + .section {
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+  }
+
+  .positions {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .position {
+    display: grid;
+    grid-template-columns: 74px 1fr 60px;
+    align-items: baseline;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(120, 150, 255, 0.05);
+  }
+
+  .position:last-child { border-bottom: none; }
+
+  .pos-name {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+  }
+
+  .pos-value {
+    font-size: 13px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+    text-align: right;
+    transition: color 0.3s;
+  }
+
+  .pos-value.flash-up {
+    color: var(--teal);
+    text-shadow: 0 0 8px rgba(20, 255, 196, 0.5);
+  }
+
+  .pos-value.flash-down {
+    color: var(--alert-soft);
+    text-shadow: 0 0 8px rgba(255, 122, 92, 0.5);
+  }
+
+  .pos-delta {
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    font-weight: 600;
+  }
+
+  .pos-delta.up { color: var(--teal); }
+  .pos-delta.down { color: var(--alert-soft); }
+
+  .hedge { margin-bottom: 11px; }
+  .hedge:last-child { margin-bottom: 0; }
+
+  .hedge-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+    letter-spacing: 0.02em;
+  }
+
+  .hedge-head span:last-child {
+    color: var(--text);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .hedge-bar {
+    height: 5px;
+    background: rgba(100, 139, 255, 0.08);
+    border-radius: 999px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .hedge-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--violet-soft), var(--teal));
+    transition: width 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+    box-shadow: 0 0 10px rgba(20, 255, 196, 0.42);
+    border-radius: 999px;
+  }
+
+  .warnings {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .warning {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 10px;
+    background: rgba(255, 77, 77, 0.06);
+    border: 1px solid rgba(255, 77, 77, 0.16);
+    border-left: 2px solid var(--alert);
+    border-radius: 12px;
+    font-size: 11px;
+    animation: slide-in 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .warn-icon {
+    color: var(--alert);
+    font-size: 10px;
+    animation: live-pulse 1.6s ease-in-out infinite;
+  }
+
+  .warn-text {
+    color: var(--text);
+    line-height: 1.35;
+  }
+
+  .warn-time {
+    color: var(--text-faint);
+    font-size: 10px;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.05em;
+  }
+
+  .ticker {
+    height: 40px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    background: linear-gradient(180deg, rgba(10, 14, 23, 0.88), rgba(7, 10, 18, 0.82));
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    backdrop-filter: blur(12px);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .ticker::before {
+    content: "LIVE";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    background: var(--alert);
+    color: var(--bg);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.2em;
+    z-index: 2;
+    box-shadow: 4px 0 16px rgba(255, 77, 77, 0.36);
+  }
+
+  .ticker::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 110px;
+    background: linear-gradient(90deg, transparent, rgba(5, 8, 14, 0.95));
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .ticker-track {
+    display: flex;
+    gap: 38px;
+    white-space: nowrap;
+    animation: ticker-scroll 70s linear infinite;
+    padding-left: 84px;
+  }
+
+  @keyframes ticker-scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  .tick-item {
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+    font-variant-numeric: tabular-nums;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .tick-item .up { color: var(--teal); }
+  .tick-item .down { color: var(--alert-soft); }
+  .tick-item .flat { color: var(--text-faint); }
+  .tick-item .sep {
+    color: var(--text-faint);
+    opacity: 0.5;
+  }
+
+  @media (max-width: 1320px) {
+    .main {
+      grid-template-columns: 280px minmax(0, 1fr) 300px;
     }
 
-    * {
-      box-sizing: border-box;
-    }
-
-    html, body {
-      margin: 0;
-      width: 100%;
-      height: 100%;
-      background: var(--bg);
-      color: white;
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif;
-      overflow: hidden;
-    }
-
-    body {
-      position: relative;
-      background:
-        radial-gradient(circle at 50% 45%, rgba(255,255,255,0.045), transparent 22%),
-        radial-gradient(circle at 50% 50%, rgba(255,255,255,0.02), transparent 55%),
-        linear-gradient(180deg, #080808 0%, #050505 45%, #030303 100%);
-    }
-
-    canvas {
-      display: block;
-      width: 100%;
-      height: 100%;
-    }
-
-    .overlay {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      z-index: 2;
-    }
-
-    .topbar {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      padding: clamp(22px, 3vw, 38px) clamp(18px, 3vw, 36px) 0;
-      display: flex;
-      justify-content: center;
-    }
-
-    .title-wrap {
-      width: min(980px, 100%);
-      text-align: center;
-    }
-
-    .eyebrow {
-      font-size: 11px;
-      letter-spacing: 0.28em;
-      text-transform: uppercase;
-      color: var(--text-faint);
-      margin-bottom: 10px;
-    }
-
-    .title {
-      margin: 0;
-      font-weight: 550;
-      font-size: clamp(28px, 4vw, 52px);
-      line-height: 1.02;
-      letter-spacing: 0.02em;
-      color: var(--text);
-      text-wrap: balance;
-    }
-
-    .subtitle {
-      margin: 14px auto 0;
-      max-width: 920px;
-      font-size: clamp(13px, 1.4vw, 17px);
-      line-height: 1.65;
-      color: var(--text-soft);
-      letter-spacing: 0.02em;
-      text-wrap: balance;
-    }
-
-    .side {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      width: min(240px, 24vw);
-      display: flex;
-      flex-direction: column;
+    .meta {
       gap: 14px;
     }
 
-    .side.left {
-      left: clamp(14px, 2vw, 28px);
+    .subtitle {
+      max-width: 560px;
     }
+  }
 
-    .side.right {
-      right: clamp(14px, 2vw, 28px);
-    }
-
-    .panel {
-      background: linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.028));
-      border: 1px solid var(--panel-border);
-      border-radius: 18px;
-      box-shadow: var(--shadow);
-      padding: 14px 14px 13px;
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-    }
-
-    .panel-label {
-      font-size: 10px;
-      letter-spacing: 0.22em;
-      text-transform: uppercase;
-      color: var(--text-faint);
-      margin-bottom: 8px;
-    }
-
-    .panel-value {
-      font-size: clamp(14px, 1.15vw, 16px);
-      line-height: 1.45;
-      color: var(--text);
-    }
-
-    .bottom {
-      position: absolute;
-      left: 50%;
-      bottom: clamp(16px, 2vw, 28px);
-      transform: translateX(-50%);
-      width: min(1040px, calc(100% - 24px));
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+  @media (max-width: 1100px) {
+    .scene {
+      padding: 12px;
       gap: 12px;
     }
 
-    .legend {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
+    .top-bar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .meta {
+      grid-template-columns: repeat(4, 1fr);
+      width: 100%;
+    }
+
+    .meta-item {
+      align-items: flex-start;
+    }
+
+    .main {
+      grid-template-columns: 260px minmax(0, 1fr) 280px;
+    }
+
+    .map-caption {
+      max-width: 240px;
+    }
+  }
+
+  @media (max-width: 920px) {
+    body {
+      overflow: auto;
+    }
+
+    .scene {
+      height: auto;
+      min-height: 100vh;
+    }
+
+    .main {
+      grid-template-columns: 1fr;
+      grid-template-rows: 240px minmax(420px, 58vh) auto;
+    }
+
+    .left-panel,
+    .right-panel {
+      min-height: 220px;
+    }
+
+    .map-wrap {
+      min-height: 420px;
+    }
+
+    .meta {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .brand {
+      align-items: flex-start;
+    }
+
+    .title-row h1 {
+      font-size: 22px;
+    }
+
+    .subtitle {
+      max-width: none;
+    }
+
+    #warning-banner {
+      top: 14px;
+      font-size: 11px;
+      max-width: calc(100% - 24px);
+    }
+  }
+
+  @media (max-width: 640px) {
+    .scene {
+      padding: 10px;
       gap: 10px;
-      max-width: 100%;
     }
 
-    .pill {
-      padding: 9px 13px;
-      border-radius: 999px;
-      border: 1px solid var(--line);
-      background: rgba(255,255,255,0.035);
-      color: rgba(255,255,255,0.78);
-      font-size: 10px;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      box-shadow: 0 6px 30px rgba(0,0,0,0.22);
-      white-space: nowrap;
-    }
-
-    .status-bar {
-      width: min(820px, 100%);
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 10px;
-    }
-
-    .status {
-      border: 1px solid var(--line-soft);
-      background: rgba(255,255,255,0.028);
+    .top-bar,
+    .panel,
+    .ticker,
+    .map-wrap {
       border-radius: 16px;
-      padding: 12px 14px;
-      text-align: center;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
     }
 
-    .status-k {
-      display: block;
-      font-size: 10px;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--text-faint);
-      margin-bottom: 7px;
+    .top-bar {
+      padding: 16px;
     }
 
-    .status-v {
-      display: block;
-      font-size: clamp(13px, 1vw, 15px);
-      color: var(--text);
-      line-height: 1.35;
+    .meta {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
     }
 
-    .vignette,
-    .scanlines,
-    .noise {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
+    .meta-value {
+      font-size: 15px;
     }
 
-    .vignette {
-      background:
-        radial-gradient(circle at center, transparent 38%, rgba(0,0,0,0.20) 72%, rgba(0,0,0,0.42) 100%);
-      z-index: 1;
+    .map-label {
+      top: 14px;
+      left: 14px;
     }
 
-    .scanlines {
-      background:
-        linear-gradient(
-          to bottom,
-          rgba(255,255,255,0.022) 0px,
-          rgba(255,255,255,0.008) 1px,
-          transparent 2px,
-          transparent 4px
-        );
-      opacity: 0.11;
-      mix-blend-mode: screen;
-      z-index: 3;
+    .map-caption {
+      top: 36px;
+      left: 14px;
+      right: 14px;
+      max-width: none;
+      font-size: 11px;
     }
 
-    .noise {
-      opacity: 0.03;
-      background-image:
-        radial-gradient(rgba(255,255,255,0.7) 0.4px, transparent 0.4px);
-      background-size: 6px 6px;
-      z-index: 3;
+    .map-coords {
+      left: 14px;
+      bottom: 14px;
+      font-size: 9px;
     }
 
-    @media (max-width: 1100px) {
-      .side {
-        width: 210px;
-      }
+    .map-legend {
+      right: 14px;
+      bottom: 14px;
+      gap: 10px;
+      font-size: 9px;
     }
 
-    @media (max-width: 920px) {
-      .side {
-        display: none;
-      }
-
-      .bottom {
-        width: min(960px, calc(100% - 20px));
-      }
-
-      .status-bar {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
+    .position {
+      grid-template-columns: 66px 1fr 52px;
     }
 
-    @media (max-width: 640px) {
-      .topbar {
-        padding-top: 18px;
-      }
-
-      .eyebrow {
-        font-size: 9px;
-        letter-spacing: 0.22em;
-      }
-
-      .subtitle {
-        max-width: 96%;
-        line-height: 1.5;
-      }
-
-      .legend {
-        gap: 8px;
-      }
-
-      .pill {
-        font-size: 9px;
-        padding: 8px 11px;
-        letter-spacing: 0.12em;
-      }
-
-      .status-bar {
-        grid-template-columns: 1fr;
-        gap: 8px;
-      }
-
-      .status {
-        padding: 10px 12px;
-      }
+    .ticker {
+      height: 38px;
     }
-  </style>
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+</style>
 </head>
 <body>
-  <canvas id="scene"></canvas>
 
-  <div class="vignette"></div>
+<div class="ambient" id="ambient"></div>
 
-  <div class="overlay">
-    <div class="topbar">
-      <div class="title-wrap">
-        <div class="eyebrow">Autonomous Market Intelligence</div>
-        <h1 class="title">Real Time Global Risk Management</h1>
-        <p class="subtitle">
-          Distributed agents monitor global news, macro events, and live markets, then reprice exposure,
-          deploy hedges, and escalate warnings the moment conditions change.
-        </p>
-      </div>
-    </div>
+<div class="scene">
 
-    <div class="side left">
-      <div class="panel">
-        <div class="panel-label">Signal Ingestion</div>
-        <div class="panel-value" id="left1">14,920 live inputs across markets and events</div>
-      </div>
-      <div class="panel">
-        <div class="panel-label">Cross Market Analysis</div>
-        <div class="panel-value" id="left2">Correlation shifts and anomaly clusters under active review</div>
-      </div>
-      <div class="panel">
-        <div class="panel-label">Risk Coordination</div>
-        <div class="panel-value" id="left3">Agents routing hedges and warnings across portfolios</div>
-      </div>
-    </div>
-
-    <div class="side right">
-      <div class="panel">
-        <div class="panel-label">Response Latency</div>
-        <div class="panel-value" id="right1">41 ms decision cycle</div>
-      </div>
-      <div class="panel">
-        <div class="panel-label">Exposure State</div>
-        <div class="panel-value" id="right2">Portfolio risk continuously rebalanced</div>
-      </div>
-      <div class="panel">
-        <div class="panel-label">Escalation Level</div>
-        <div class="panel-value" id="right3">Elevated macro and volatility watch</div>
-      </div>
-    </div>
-
-    <div class="bottom">
-      <div class="legend">
-        <div class="pill">News</div>
-        <div class="pill">Geopolitics</div>
-        <div class="pill">Rates</div>
-        <div class="pill">FX</div>
-        <div class="pill">Equities</div>
-        <div class="pill">Credit</div>
-        <div class="pill">Commodities</div>
-        <div class="pill">Volatility</div>
-        <div class="pill">Hedges</div>
-        <div class="pill">Warnings</div>
+  <header class="top-bar">
+    <div class="brand">
+      <div class="live-indicator">
+        <span class="pulse-dot"></span>
+        LIVE
       </div>
 
-      <div class="status-bar">
-        <div class="status">
-          <span class="status-k">Signal Flow</span>
-          <span class="status-v" id="s1">Global event stream active</span>
+      <div class="title-block">
+        <div class="eyebrow">Level 3 AI · Risk Intelligence Mesh</div>
+        <div class="title-row">
+          <h1>Real-Time Global <strong>Risk Management</strong></h1>
         </div>
-        <div class="status">
-          <span class="status-k">Inference</span>
-          <span class="status-v" id="s2">Risk engine repricing in real time</span>
-        </div>
-        <div class="status">
-          <span class="status-k">Hedging</span>
-          <span class="status-v" id="s3">Protective actions routing across books</span>
-        </div>
-        <div class="status">
-          <span class="status-k">Alerting</span>
-          <span class="status-v" id="s4">Escalations synchronized to decision makers</span>
+        <div class="subtitle">
+          Agents monitor global news, events, and markets, updating positions, hedges, and warnings instantly as new data emerges.
         </div>
       </div>
     </div>
-  </div>
 
-  <div class="scanlines"></div>
-  <div class="noise"></div>
+    <div class="meta">
+      <div class="meta-item">
+        <span class="meta-label">Agents Active</span>
+        <span class="meta-value" id="agent-count">1,247</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Events / Sec</span>
+        <span class="meta-value violet" id="eps-value">—</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Latency</span>
+        <span class="meta-value gold" id="latency-value">2.3<span class="unit">ms</span></span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Coverage</span>
+        <span class="meta-value" id="coverage-value">78.6<span class="unit">%</span></span>
+      </div>
+    </div>
+  </header>
 
-  <script>
-    const canvas = document.getElementById("scene");
-    const ctx = canvas.getContext("2d");
+  <main class="main">
 
-    let width = 0;
-    let height = 0;
-    let dpr = Math.min(window.devicePixelRatio || 1, 2);
+    <aside class="panel left-panel">
+      <div class="panel-header">
+        <span class="tag">◆</span> Incoming Signals
+        <span class="count" id="signal-count">0 / sec</span>
+      </div>
+      <div class="feed" id="feed"></div>
+    </aside>
 
-    const state = {
-      centerX: 0,
-      centerY: 0,
-      globeR: 0,
-      rings: [],
-      nodes: [],
-      pulses: [],
-      traces: [],
-      warnings: [],
-      stars: []
-    };
+    <section class="map-wrap">
+      <div class="map-label"><b>NET-01</b> &nbsp; GLOBAL SIGNAL INTAKE</div>
+      <div class="map-caption">
+        A distributed mesh of agents detects emerging macro, geopolitical, FX, rates, commodities, and credit risk in parallel.
+      </div>
 
-    const labels = [
-      "NEWS", "FX", "RATES", "CREDIT", "VOL", "POLICY", "FLOW", "EVENT",
-      "ENERGY", "INDEX", "MACRO", "RISK", "HEDGE", "ALERT", "SHIPPING", "BONDS"
-    ];
+      <svg class="world-map" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet" aria-label="Global risk intelligence map">
+        <defs>
+          <radialGradient id="hubGradient" cx="50%" cy="50%">
+            <stop offset="0%" stop-color="#14ffc4" stop-opacity="0.54" />
+            <stop offset="42%" stop-color="#14ffc4" stop-opacity="0.18" />
+            <stop offset="100%" stop-color="#14ffc4" stop-opacity="0" />
+          </radialGradient>
 
-    const hudSets = {
-      left1: [
-        "14,920 live inputs across markets and events",
-        "16,410 concurrent signals entering the system",
-        "13,880 live data points fused across regions",
-        "18,020 active feeds under continuous monitoring"
-      ],
-      left2: [
-        "Correlation shifts and anomaly clusters under active review",
-        "Shock propagation pathways being mapped in real time",
-        "Cross asset dependencies re-evaluated every cycle",
-        "Macro and market disruptions being scored continuously"
-      ],
-      left3: [
-        "Agents routing hedges and warnings across portfolios",
-        "Distributed systems coordinating protection and escalation",
-        "Execution pathways prioritized by emerging risk intensity",
-        "Response logic synchronizing positions and alerts"
-      ],
-      right1: [
-        "41 ms decision cycle",
-        "38 ms response time",
-        "46 ms signal to action",
-        "43 ms coordinated update latency"
-      ],
-      right2: [
-        "Portfolio risk continuously rebalanced",
-        "Exposure and hedge ratios updating live",
-        "Cross asset offsets adjusting in flight",
-        "Live protection logic active across positions"
-      ],
-      right3: [
-        "Elevated macro and volatility watch",
-        "Regional disruption pathway flagged",
-        "Fast moving market stress under review",
-        "Event driven escalation threshold raised"
-      ],
-      s1: [
-        "Global event stream active",
-        "Multi region monitoring online",
-        "News and market ingestion synchronized",
-        "Cross venue signal intake stable"
-      ],
-      s2: [
-        "Risk engine repricing in real time",
-        "Anomaly detection pipeline fully active",
-        "Scenario scoring converging continuously",
-        "Decision model evaluating second order effects"
-      ],
-      s3: [
-        "Protective actions routing across books",
-        "Hedge allocation logic responding instantly",
-        "Execution priorities recalibrated live",
-        "Defense posture adapting by region and asset"
-      ],
-      s4: [
-        "Escalations synchronized to decision makers",
-        "Warnings pushed as thresholds are crossed",
-        "Critical alerts prioritized by severity",
-        "Response chain aligned across teams"
-      ]
-    };
+          <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="1.5" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
 
-    function rand(min, max) {
-      return Math.random() * (max - min) + min;
-    }
+        <g id="map-dots"></g>
+        <g id="connections"></g>
+        <g id="cities"></g>
 
-    function pick(arr) {
-      return arr[Math.floor(Math.random() * arr.length)];
-    }
+        <g id="hub">
+          <circle class="hub-aura" cx="500" cy="250" r="105" />
+          <circle class="hub-rotor r1" cx="500" cy="250" r="60" stroke-dasharray="4 7" />
+          <circle class="hub-rotor r2" cx="500" cy="250" r="44" stroke-dasharray="2 5" />
+          <circle class="hub-ring-outer" cx="500" cy="250" r="25" />
+          <circle class="hub-ring-inner" cx="500" cy="250" r="15" />
+          <circle class="hub-core" cx="500" cy="250" r="11" />
+          <circle class="hub-center" cx="500" cy="250" r="3.5" />
+          <text class="hub-label glow" x="500" y="304">AI RISK ENGINE</text>
+          <text class="hub-label" x="500" y="318">◆ LEVEL 3 MESH</text>
+        </g>
 
-    function setCanvasSize() {
-      width = window.innerWidth;
-      height = window.innerHeight;
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
+        <g id="hub-bursts"></g>
+      </svg>
 
-      canvas.width = Math.floor(width * dpr);
-      canvas.height = Math.floor(height * dpr);
-      canvas.style.width = width + "px";
-      canvas.style.height = height + "px";
+      <div id="warning-banner"><span class="b-tag">ALERT</span><span id="warning-text"></span></div>
 
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      <div class="map-coords">LAT 40.71° N · LON 74.00° W · UTC 12:47:23</div>
 
-      state.centerX = width * 0.5;
-      state.centerY = height * 0.56;
-      state.globeR = Math.min(width, height) * (width < 700 ? 0.18 : 0.16);
+      <div class="map-legend">
+        <span><i class="legend-dot" style="background:#14ffc4; box-shadow:0 0 8px #14ffc4;"></i> SIGNAL</span>
+        <span><i class="legend-dot" style="background:#fbbf24; box-shadow:0 0 8px #fbbf24;"></i> WATCH</span>
+        <span><i class="legend-dot" style="background:#ff4d4d; box-shadow:0 0 8px #ff4d4d;"></i> ALERT</span>
+      </div>
+    </section>
 
-      const base = state.globeR;
-      state.rings = [
-        { rx: base * 1.55, ry: base * 1.05 },
-        { rx: base * 1.95, ry: base * 1.32 },
-        { rx: base * 2.38, ry: base * 1.60 }
-      ];
+    <aside class="panel right-panel">
+      <div class="section">
+        <div class="panel-header">
+          <span class="tag">◆</span> Live Positions
+          <span class="count">6 tracked</span>
+        </div>
+        <div class="positions" id="positions"></div>
+      </div>
 
-      buildStars();
-      buildNodes();
-    }
+      <div class="section">
+        <div class="panel-header">
+          <span class="tag violet">◆</span> Active Hedges
+          <span class="count" id="hedge-count">4 active</span>
+        </div>
+        <div id="hedges"></div>
+      </div>
 
-    function buildStars() {
-      state.stars = [];
-      const count = width < 700 ? 60 : 110;
+      <div class="section">
+        <div class="panel-header">
+          <span class="tag alert">▲</span> Risk Escalations
+          <span class="count" id="warn-count">—</span>
+        </div>
+        <div class="warnings" id="warnings"></div>
+      </div>
+    </aside>
+  </main>
 
-      for (let i = 0; i < count; i++) {
-        state.stars.push({
-          x: Math.random() * width,
-          y: Math.random() * height,
-          a: rand(0.08, 0.4),
-          r: rand(0.5, 1.4),
-          tw: rand(0.001, 0.004)
-        });
-      }
-    }
+  <footer class="ticker">
+    <div class="ticker-track" id="ticker"></div>
+  </footer>
+</div>
 
-    function buildNodes() {
-      state.nodes = [];
-      const count = width < 700 ? 28 : width < 1100 ? 40 : 54;
+<script>
+const CITIES = [
+  { id: 'NYC', name: 'New York',      x: 294, y: 177 },
+  { id: 'CHI', name: 'Chicago',       x: 257, y: 174 },
+  { id: 'SFO', name: 'San Francisco', x: 160, y: 185 },
+  { id: 'TOR', name: 'Toronto',       x: 278, y: 170 },
+  { id: 'LON', name: 'London',        x: 499, y: 147 },
+  { id: 'FRA', name: 'Frankfurt',     x: 524, y: 151 },
+  { id: 'ZUR', name: 'Zurich',        x: 521, y: 158 },
+  { id: 'PAR', name: 'Paris',         x: 506, y: 161 },
+  { id: 'MOS', name: 'Moscow',        x: 604, y: 135 },
+  { id: 'DXB', name: 'Dubai',         x: 654, y: 210 },
+  { id: 'MUM', name: 'Mumbai',        x: 702, y: 227 },
+  { id: 'SIN', name: 'Singapore',     x: 788, y: 276 },
+  { id: 'HKG', name: 'Hong Kong',     x: 817, y: 228 },
+  { id: 'SHA', name: 'Shanghai',      x: 837, y: 203 },
+  { id: 'SEO', name: 'Seoul',         x: 858, y: 183 },
+  { id: 'TOK', name: 'Tokyo',         x: 888, y: 191 },
+  { id: 'SYD', name: 'Sydney',        x: 920, y: 364 },
+  { id: 'SAO', name: 'São Paulo',     x: 370, y: 335 }
+];
 
-      for (let i = 0; i < count; i++) {
-        const ringIndex = i % state.rings.length;
-        const ring = state.rings[ringIndex];
+const HUB = { x: 500, y: 250 };
 
-        state.nodes.push({
-          ringIndex,
-          angle: (Math.PI * 2 * i) / count + rand(-0.14, 0.14),
-          speed: rand(0.0008, 0.0022) * (Math.random() > 0.5 ? 1 : -1),
-          size: rand(2, 4.2),
-          glow: rand(0.15, 0.8),
-          label: pick(labels),
-          labelOffset: Math.random() * Math.PI * 2,
-          type: Math.random() > 0.78 ? "warning" : "signal",
-          drift: rand(-0.04, 0.04),
-          ring
-        });
-      }
-    }
+const NEWS_ITEMS = [
+  { tag: 'FED',  text: 'Fed signals rate pause. EUR/USD volatility spike detected.', sev: 'high', city: 'NYC' },
+  { tag: 'OIL',  text: 'Brent crude surges 3.2% on supply disruption.', sev: 'med', city: 'DXB' },
+  { tag: 'ASIA', text: 'Nikkei closes +1.8% on stimulus hopes.', sev: 'low', city: 'TOK' },
+  { tag: 'ECB',  text: 'ECB inflation print beats expectation. 10bp repricing underway.', sev: 'med', city: 'FRA' },
+  { tag: 'GEO',  text: 'Shipping lane disruption flagged. Supply chain alert active.', sev: 'high', city: 'SIN' },
+  { tag: 'TECH', text: 'Semiconductor index rebalance triggered.', sev: 'med', city: 'HKG' },
+  { tag: 'FX',   text: 'Yen weakens past 155. Intervention watch activated.', sev: 'high', city: 'TOK' },
+  { tag: 'COM',  text: 'Copper futures up 1.4% on demand forecast.', sev: 'low', city: 'SHA' },
+  { tag: 'EQT',  text: 'Unusual options activity detected in SPX downside protection.', sev: 'med', city: 'CHI' },
+  { tag: 'BOND', text: 'UK gilt yields jump 12bp after weak auction result.', sev: 'high', city: 'LON' },
+  { tag: 'CRY',  text: 'BTC breaks $120K threshold on ETF inflows.', sev: 'low', city: 'NYC' },
+  { tag: 'CBK',  text: 'SNB surprise hold. CHF strength building rapidly.', sev: 'med', city: 'ZUR' },
+  { tag: 'ETF',  text: 'Large block trade rotates $45M into defensives.', sev: 'med', city: 'NYC' },
+  { tag: 'COM',  text: 'Gold breaks $2,450. Classic risk off signal.', sev: 'med', city: 'LON' },
+  { tag: 'EM',   text: 'BRL weakens 1.1%. Central bank intervention watch.', sev: 'med', city: 'SAO' },
+  { tag: 'CRD',  text: 'High yield credit spreads widening by 8bp.', sev: 'high', city: 'NYC' },
+  { tag: 'TECH', text: 'Semi guidance revision triggers sector rotation.', sev: 'high', city: 'SFO' },
+  { tag: 'BOND', text: 'JGB 10Y crosses 1.5% psychological threshold.', sev: 'high', city: 'TOK' },
+  { tag: 'OPEC', text: 'OPEC+ unscheduled meeting called. Supply uncertainty elevated.', sev: 'high', city: 'DXB' },
+  { tag: 'AUS',  text: 'RBA minutes reveal hawkish tilt.', sev: 'med', city: 'SYD' }
+];
 
-    function nodePosition(node) {
-      const ring = state.rings[node.ringIndex];
-      return {
-        x: state.centerX + Math.cos(node.angle) * ring.rx,
-        y: state.centerY + Math.sin(node.angle) * ring.ry
-      };
-    }
+const POSITIONS = [
+  { id: 'eur', name: 'EUR/USD', value: 1.0847, base: 1.0847, prec: 4 },
+  { id: 'spy', name: 'S&P 500', value: 5847.22, base: 5847.22, prec: 2 },
+  { id: 'btc', name: 'BTC/USD', value: 119847, base: 119847, prec: 0 },
+  { id: 'oil', name: 'BRENT', value: 87.42, base: 87.42, prec: 2 },
+  { id: 'gld', name: 'GOLD', value: 2451.30, base: 2451.30, prec: 2 },
+  { id: 'jpy', name: 'USD/JPY', value: 154.82, base: 154.82, prec: 2 }
+];
 
-    function spawnPulse() {
-      if (!state.nodes.length) return;
+const HEDGES = [
+  { name: 'Index Put Ladder', cover: 73.4 },
+  { name: 'FX Basket Hedge', cover: 91.2 },
+  { name: 'Rates Flattener', cover: 65.8 },
+  { name: 'Credit IG CDX', cover: 84.1 }
+];
 
-      const fromNode = pick(state.nodes);
-      const pos = nodePosition(fromNode);
+const WARNING_TEXTS = [
+  'VaR threshold at 85%. Auto hedge deployed across 14 books.',
+  'Correlation breakdown between US tech and EM. Agents rebalancing.',
+  'Liquidity alert. EUR/CHF spreads widening beyond 2σ.',
+  'Flash crash pattern detected at Tokyo open. Isolating exposure.',
+  'Cross asset volatility spike. Gross exposure reduced 8%.',
+  'Geopolitical event flagged. Adjusting 12 position sizes.',
+  'Funding stress in short dated repo. Agents intervening.',
+  'Sovereign spread breakout. Developed market rotation in progress.'
+];
 
-      state.pulses.push({
-        fromX: pos.x,
-        fromY: pos.y,
-        toX: state.centerX,
-        toY: state.centerY,
-        t: 0,
-        speed: rand(0.014, 0.026),
-        size: rand(2.2, 4.6),
-        alpha: rand(0.45, 0.9)
-      });
-    }
+const TICKER_ITEMS = [
+  { k: 'EUR/USD', v: '1.0847', d: 'up' },
+  { k: 'S&P 500', v: '5,847.22', d: 'up' },
+  { k: 'BRENT', v: '87.42', d: 'down' },
+  { k: 'GOLD', v: '2,451.30', d: 'up' },
+  { k: 'USD/JPY', v: '154.82', d: 'down' },
+  { k: 'BTC', v: '119,847', d: 'up' },
+  { k: 'VIX', v: '14.2', d: 'down' },
+  { k: 'DXY', v: '104.3', d: 'flat' },
+  { k: 'UST 10Y', v: '4.28%', d: 'up' },
+  { k: 'COVERAGE', v: '78.6%', d: 'up' },
+  { k: 'VaR 95%', v: '$2.3M', d: 'flat' },
+  { k: 'AGENTS', v: '1,247 online', d: 'up' },
+  { k: 'LATENCY', v: '2.3ms', d: 'flat' },
+  { k: 'COPPER', v: '4.28', d: 'up' },
+  { k: 'GBP/USD', v: '1.2684', d: 'down' }
+];
 
-    function spawnTrace() {
-      if (state.nodes.length < 2) return;
+function drawMapDots() {
+  const g = document.getElementById('map-dots');
+  const regions = [
+    [130, 105, 210, 50, 0.42],
+    [145, 145, 170, 55, 0.48],
+    [170, 195, 130, 40, 0.38],
+    [220, 115, 90, 35, 0.45],
+    [220, 200, 60, 35, 0.35],
+    [300, 230, 80, 90, 0.45],
+    [320, 315, 55, 55, 0.42],
+    [475, 125, 90, 55, 0.55],
+    [465, 105, 60, 25, 0.4],
+    [490, 200, 110, 60, 0.4],
+    [510, 255, 95, 80, 0.42],
+    [555, 320, 40, 30, 0.35],
+    [615, 180, 75, 50, 0.4],
+    [560, 85, 280, 55, 0.4],
+    [630, 140, 200, 50, 0.4],
+    [790, 160, 90, 80, 0.48],
+    [835, 150, 65, 55, 0.5],
+    [660, 205, 75, 40, 0.45],
+    [745, 220, 70, 45, 0.42],
+    [780, 260, 55, 35, 0.38],
+    [830, 305, 95, 55, 0.45],
+    [875, 175, 30, 40, 0.5],
+    [470, 130, 20, 30, 0.5],
+    [395, 80, 75, 35, 0.28]
+  ];
 
-      let a = pick(state.nodes);
-      let b = pick(state.nodes);
-      if (a === b) return;
-
-      const p1 = nodePosition(a);
-      const p2 = nodePosition(b);
-
-      state.traces.push({
-        x1: p1.x,
-        y1: p1.y,
-        x2: p2.x,
-        y2: p2.y,
-        cx: (p1.x + p2.x) / 2 + rand(-26, 26),
-        cy: (p1.y + p2.y) / 2 - rand(18, 52),
-        life: 1,
-        decay: rand(0.01, 0.02)
-      });
-    }
-
-    function spawnWarning() {
-      const angle = rand(0, Math.PI * 2);
-      const radiusX = state.globeR * rand(1.18, 1.5);
-      const radiusY = state.globeR * rand(0.95, 1.22);
-
-      state.warnings.push({
-        angle,
-        rx: radiusX,
-        ry: radiusY,
-        life: 1,
-        growth: rand(0.65, 1.2)
-      });
-    }
-
-    function drawBackdrop(time) {
-      ctx.clearRect(0, 0, width, height);
-
-      const radial = ctx.createRadialGradient(
-        state.centerX,
-        state.centerY,
-        state.globeR * 0.2,
-        state.centerX,
-        state.centerY,
-        Math.max(width, height) * 0.65
-      );
-      radial.addColorStop(0, "rgba(255,255,255,0.04)");
-      radial.addColorStop(0.28, "rgba(255,255,255,0.015)");
-      radial.addColorStop(1, "rgba(255,255,255,0)");
-
-      ctx.fillStyle = radial;
-      ctx.fillRect(0, 0, width, height);
-
-      ctx.save();
-      for (const star of state.stars) {
-        const twinkle = star.a + Math.sin(time * star.tw) * 0.08;
-        ctx.beginPath();
-        ctx.arc(star.x, star.y, star.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255,255,255,${twinkle})`;
-        ctx.fill();
-      }
-      ctx.restore();
-
-      ctx.save();
-      ctx.strokeStyle = "rgba(255,255,255,0.03)";
-      ctx.lineWidth = 1;
-
-      const gap = width < 700 ? 52 : 58;
-      for (let x = 0; x < width; x += gap) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, height);
-        ctx.stroke();
-      }
-      for (let y = 0; y < height; y += gap) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(width, y);
-        ctx.stroke();
-      }
-      ctx.restore();
-    }
-
-    function drawRings(time) {
-      ctx.save();
-
-      state.rings.forEach((ring, i) => {
-        ctx.beginPath();
-        ctx.ellipse(state.centerX, state.centerY, ring.rx, ring.ry, 0, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(255,255,255,${0.06 + i * 0.03})`;
-        ctx.lineWidth = 1;
-        ctx.stroke();
-      });
-
-      for (let i = 0; i < 4; i++) {
-        const pulse = (Math.sin(time * 0.0015 + i * 0.8) + 1) * 0.5;
-        const r = state.globeR * (1.08 + i * 0.12 + pulse * 0.04);
-
-        ctx.beginPath();
-        ctx.arc(state.centerX, state.centerY, r, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(255,255,255,${0.03 + (0.06 - i * 0.01)})`;
-        ctx.lineWidth = 1;
-        ctx.stroke();
-      }
-
-      ctx.restore();
-    }
-
-    function drawGlobe(time) {
-      ctx.save();
-
-      const g = ctx.createRadialGradient(
-        state.centerX - state.globeR * 0.26,
-        state.centerY - state.globeR * 0.28,
-        state.globeR * 0.15,
-        state.centerX,
-        state.centerY,
-        state.globeR
-      );
-      g.addColorStop(0, "rgba(255,255,255,0.18)");
-      g.addColorStop(0.42, "rgba(255,255,255,0.075)");
-      g.addColorStop(1, "rgba(255,255,255,0.02)");
-
-      ctx.beginPath();
-      ctx.arc(state.centerX, state.centerY, state.globeR, 0, Math.PI * 2);
-      ctx.fillStyle = g;
-      ctx.fill();
-      ctx.strokeStyle = "rgba(255,255,255,0.17)";
-      ctx.lineWidth = 1.2;
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.ellipse(state.centerX, state.centerY, state.globeR, state.globeR * 0.34, 0, 0, Math.PI * 2);
-      ctx.strokeStyle = "rgba(255,255,255,0.09)";
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.ellipse(state.centerX, state.centerY, state.globeR * 0.55, state.globeR, 0, 0, Math.PI * 2);
-      ctx.strokeStyle = "rgba(255,255,255,0.09)";
-      ctx.stroke();
-
-      for (let i = -2; i <= 2; i++) {
-        const rr = state.globeR * Math.cos(i * 0.4);
-        if (rr > 2) {
-          ctx.beginPath();
-          ctx.arc(state.centerX, state.centerY + i * state.globeR * 0.24, rr, 0, Math.PI * 2);
-          ctx.strokeStyle = "rgba(255,255,255,0.055)";
-          ctx.stroke();
+  regions.forEach(([x1, y1, w, h, density]) => {
+    const step = 7;
+    for (let x = x1; x < x1 + w; x += step) {
+      for (let y = y1; y < y1 + h; y += step) {
+        if (Math.random() < density) {
+          const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          c.setAttribute('cx', x + (Math.random() - 0.5) * 3);
+          c.setAttribute('cy', y + (Math.random() - 0.5) * 3);
+          c.setAttribute('r', Math.random() < 0.15 ? 1.1 : 0.75);
+          c.setAttribute('class', 'map-dot land');
+          g.appendChild(c);
         }
       }
+    }
+  });
+}
 
-      const sweepAngle = time * 0.001;
-      ctx.beginPath();
-      ctx.moveTo(state.centerX, state.centerY);
-      ctx.arc(state.centerX, state.centerY, state.globeR * 1.16, sweepAngle, sweepAngle + 0.25);
-      ctx.closePath();
-      ctx.fillStyle = "rgba(255,255,255,0.035)";
-      ctx.fill();
+function drawCities() {
+  const g = document.getElementById('cities');
+  CITIES.forEach(city => {
+    const node = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    node.setAttribute('id', `city-${city.id}`);
+    node.innerHTML = `
+      <circle cx="${city.x}" cy="${city.y}" r="6" class="city-ring"></circle>
+      <circle cx="${city.x}" cy="${city.y}" r="2.2" class="city-dot"></circle>
+    `;
+    g.appendChild(node);
+  });
+}
 
-      const innerPulse = 0.6 + Math.sin(time * 0.003) * 0.08;
-      ctx.beginPath();
-      ctx.arc(state.centerX, state.centerY, state.globeR * innerPulse * 0.18, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(255,255,255,0.92)";
-      ctx.fill();
+function triggerSignal(cityId, severity) {
+  const city = CITIES.find(c => c.id === cityId);
+  if (!city) return;
 
-      ctx.beginPath();
-      ctx.arc(state.centerX, state.centerY, state.globeR * innerPulse * 0.33, 0, Math.PI * 2);
-      ctx.strokeStyle = "rgba(255,255,255,0.12)";
-      ctx.stroke();
+  const normalizedSeverity = severity === 'med' ? 'med' : severity === 'high' ? 'high' : 'low';
 
-      ctx.restore();
+  const citiesLayer = document.getElementById('cities');
+  const pulse = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  pulse.setAttribute('cx', city.x);
+  pulse.setAttribute('cy', city.y);
+  pulse.setAttribute('r', 3);
+  pulse.setAttribute('class', `pulse-ring ${normalizedSeverity}`);
+  citiesLayer.appendChild(pulse);
+  setTimeout(() => pulse.remove(), 2000);
+
+  const conn = document.getElementById('connections');
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+
+  const mx = (city.x + HUB.x) / 2;
+  const my = (city.y + HUB.y) / 2;
+  const dx = HUB.x - city.x;
+  const dy = HUB.y - city.y;
+  const len = Math.max(1, Math.sqrt(dx * dx + dy * dy));
+  const nx = -dy / len;
+  const ny = dx / len;
+  const curveAmt = len * 0.15;
+  const cx = mx + nx * curveAmt;
+  const cy = my + ny * curveAmt;
+  const d = `M ${city.x} ${city.y} Q ${cx} ${cy} ${HUB.x} ${HUB.y}`;
+
+  path.setAttribute('d', d);
+  path.setAttribute('class', `connection ${normalizedSeverity}`);
+  conn.appendChild(path);
+  setTimeout(() => path.remove(), 2000);
+
+  const particle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  particle.setAttribute('r', normalizedSeverity === 'high' ? 3 : 2.2);
+  particle.setAttribute('class', `data-particle ${normalizedSeverity}`);
+  conn.appendChild(particle);
+
+  const duration = 900 + Math.random() * 280;
+  const start = performance.now();
+
+  function animate(now) {
+    const t = Math.min(1, (now - start) / duration);
+    if (t >= 1) {
+      particle.remove();
+      triggerHubBurst();
+      return;
     }
 
-    function drawNodes(time) {
-      ctx.save();
+    const eased = 1 - Math.pow(1 - t, 2.2);
+    const px = (1 - eased) * (1 - eased) * city.x + 2 * (1 - eased) * eased * cx + eased * eased * HUB.x;
+    const py = (1 - eased) * (1 - eased) * city.y + 2 * (1 - eased) * eased * cy + eased * eased * HUB.y;
 
-      state.nodes.forEach((node, index) => {
-        node.angle += node.speed;
-
-        const p = nodePosition(node);
-        const pulse = 0.55 + 0.45 * Math.sin(time * 0.003 + node.labelOffset);
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, node.size + pulse * 1.25, 0, Math.PI * 2);
-        ctx.fillStyle = node.type === "warning"
-          ? `rgba(255,255,255,${0.14 + pulse * 0.18})`
-          : `rgba(255,255,255,${0.11 + pulse * 0.14})`;
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, Math.max(1.2, node.size * 0.55), 0, Math.PI * 2);
-        ctx.fillStyle = "#ffffff";
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.moveTo(p.x, p.y);
-        ctx.lineTo(state.centerX, state.centerY);
-        ctx.strokeStyle = "rgba(255,255,255,0.045)";
-        ctx.lineWidth = 1;
-        ctx.stroke();
-
-        if (width > 760 && index % 8 === 0) {
-          ctx.font = "10px -apple-system, BlinkMacSystemFont, sans-serif";
-          ctx.fillStyle = "rgba(255,255,255,0.42)";
-          ctx.textAlign = "center";
-          ctx.fillText(node.label, p.x, p.y - 12);
-        }
-      });
-
-      ctx.restore();
-    }
-
-    function drawTraces() {
-      ctx.save();
-
-      for (let i = state.traces.length - 1; i >= 0; i--) {
-        const t = state.traces[i];
-        t.life -= t.decay;
-
-        if (t.life <= 0) {
-          state.traces.splice(i, 1);
-          continue;
-        }
-
-        ctx.beginPath();
-        ctx.moveTo(t.x1, t.y1);
-        ctx.quadraticCurveTo(t.cx, t.cy, t.x2, t.y2);
-        ctx.strokeStyle = `rgba(255,255,255,${t.life * 0.18})`;
-        ctx.lineWidth = 1.15;
-        ctx.stroke();
-      }
-
-      ctx.restore();
-    }
-
-    function drawPulses() {
-      ctx.save();
-
-      for (let i = state.pulses.length - 1; i >= 0; i--) {
-        const p = state.pulses[i];
-        p.t += p.speed;
-
-        if (p.t >= 1) {
-          state.pulses.splice(i, 1);
-          continue;
-        }
-
-        const x = p.fromX + (p.toX - p.fromX) * p.t;
-        const y = p.fromY + (p.toY - p.fromY) * p.t;
-        const alpha = p.alpha * (1 - p.t * 0.35);
-
-        ctx.beginPath();
-        ctx.arc(x, y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255,255,255,${alpha})`;
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.arc(x, y, p.size * 2.4, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(255,255,255,${alpha * 0.22})`;
-        ctx.lineWidth = 1;
-        ctx.stroke();
-      }
-
-      ctx.restore();
-    }
-
-    function drawWarnings() {
-      ctx.save();
-
-      for (let i = state.warnings.length - 1; i >= 0; i--) {
-        const w = state.warnings[i];
-        w.life -= 0.012;
-
-        if (w.life <= 0) {
-          state.warnings.splice(i, 1);
-          continue;
-        }
-
-        const x = state.centerX + Math.cos(w.angle) * w.rx;
-        const y = state.centerY + Math.sin(w.angle) * w.ry;
-        const rr = 8 + (1 - w.life) * 18 * w.growth;
-
-        ctx.beginPath();
-        ctx.arc(x, y, rr, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(255,255,255,${w.life * 0.28})`;
-        ctx.lineWidth = 1.4;
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.arc(x, y, 2.1, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255,255,255,${w.life * 0.9})`;
-        ctx.fill();
-      }
-
-      ctx.restore();
-    }
-
-    let hudTimer = 0;
-
-    function updateHud(time) {
-      if (time - hudTimer < 2400) return;
-      hudTimer = time;
-
-      for (const id in hudSets) {
-        const el = document.getElementById(id);
-        if (el) el.textContent = pick(hudSets[id]);
-      }
-    }
-
-    function animate(time) {
-      drawBackdrop(time);
-      drawRings(time);
-      drawTraces();
-      drawNodes(time);
-      drawPulses();
-      drawWarnings();
-      drawGlobe(time);
-      updateHud(time);
-
-      if (Math.random() < 0.17) spawnPulse();
-      if (Math.random() < 0.05) spawnTrace();
-      if (Math.random() < 0.018) spawnWarning();
-
-      requestAnimationFrame(animate);
-    }
-
-    window.addEventListener("resize", setCanvasSize);
-
-    setCanvasSize();
+    particle.setAttribute('cx', px);
+    particle.setAttribute('cy', py);
     requestAnimationFrame(animate);
-  </script>
+  }
+
+  requestAnimationFrame(animate);
+}
+
+function triggerHubBurst() {
+  const layer = document.getElementById('hub-bursts');
+  const burst = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  burst.setAttribute('cx', HUB.x);
+  burst.setAttribute('cy', HUB.y);
+  burst.setAttribute('r', 14);
+  burst.setAttribute('class', 'hub-burst');
+  layer.appendChild(burst);
+  setTimeout(() => burst.remove(), 1000);
+}
+
+function formatTime(d = new Date()) {
+  const pad = n => n.toString().padStart(2, '0');
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+function addFeedItem(item) {
+  const feed = document.getElementById('feed');
+  const el = document.createElement('div');
+  el.className = `feed-item sev-${item.sev}`;
+  el.innerHTML = `
+    <div class="feed-head">
+      <span class="feed-tag">${item.tag}</span>
+      <span class="feed-city">${item.city}</span>
+      <span class="feed-time">${formatTime()}</span>
+    </div>
+    <div class="feed-text">${item.text}</div>
+  `;
+
+  feed.insertBefore(el, feed.firstChild);
+
+  while (feed.children.length > 8) {
+    const last = feed.lastChild;
+    last.style.opacity = '0';
+    setTimeout(() => last.remove(), 400);
+    break;
+  }
+
+  triggerSignal(item.city, item.sev);
+}
+
+function formatValue(v, prec) {
+  if (prec === 0) return Math.round(v).toLocaleString();
+  return v.toLocaleString('en-US', {
+    minimumFractionDigits: prec,
+    maximumFractionDigits: prec
+  });
+}
+
+function drawPositions() {
+  const el = document.getElementById('positions');
+  el.innerHTML = POSITIONS.map(p => `
+    <div class="position">
+      <div class="pos-name">${p.name}</div>
+      <div class="pos-value" id="posv-${p.id}">${formatValue(p.value, p.prec)}</div>
+      <div class="pos-delta" id="posd-${p.id}">+0.00%</div>
+    </div>
+  `).join('');
+}
+
+function updatePositions() {
+  POSITIONS.forEach(p => {
+    const change = (Math.random() - 0.5) * 0.003;
+    p.value = p.value * (1 + change);
+    p.value = p.value * 0.995 + p.base * 0.005;
+    const deltaPct = ((p.value - p.base) / p.base) * 100;
+
+    const valEl = document.getElementById(`posv-${p.id}`);
+    const delEl = document.getElementById(`posd-${p.id}`);
+
+    if (!valEl || !delEl) return;
+
+    valEl.textContent = formatValue(p.value, p.prec);
+    delEl.textContent = `${deltaPct >= 0 ? '+' : ''}${deltaPct.toFixed(2)}%`;
+    delEl.className = `pos-delta ${deltaPct >= 0 ? 'up' : 'down'}`;
+
+    valEl.className = 'pos-value';
+    void valEl.offsetWidth;
+    valEl.classList.add(change >= 0 ? 'flash-up' : 'flash-down');
+  });
+}
+
+function drawHedges() {
+  const el = document.getElementById('hedges');
+  el.innerHTML = HEDGES.map((h, i) => `
+    <div class="hedge">
+      <div class="hedge-head">
+        <span>${h.name}</span>
+        <span id="hedgev-${i}">${h.cover.toFixed(1)}%</span>
+      </div>
+      <div class="hedge-bar">
+        <div class="hedge-fill" id="hedgef-${i}" style="width:${h.cover}%"></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function updateHedges() {
+  let total = 0;
+
+  HEDGES.forEach((h, i) => {
+    h.cover = Math.max(45, Math.min(98, h.cover + (Math.random() - 0.5) * 4));
+    total += h.cover;
+
+    const v = document.getElementById(`hedgev-${i}`);
+    const f = document.getElementById(`hedgef-${i}`);
+
+    if (v) v.textContent = `${h.cover.toFixed(1)}%`;
+    if (f) f.style.width = `${h.cover}%`;
+  });
+
+  const avg = total / HEDGES.length;
+  document.getElementById('coverage-value').innerHTML = `${avg.toFixed(1)}<span class="unit">%</span>`;
+}
+
+let warnCounter = 0;
+
+function addWarning(text) {
+  const el = document.getElementById('warnings');
+  const w = document.createElement('div');
+  w.className = 'warning';
+  w.innerHTML = `
+    <span class="warn-icon">▲</span>
+    <span class="warn-text">${text}</span>
+    <span class="warn-time">${formatTime()}</span>
+  `;
+  el.insertBefore(w, el.firstChild);
+
+  while (el.children.length > 3) {
+    el.removeChild(el.lastChild);
+  }
+
+  warnCounter++;
+  document.getElementById('warn-count').textContent = `${warnCounter} today`;
+
+  const banner = document.getElementById('warning-banner');
+  document.getElementById('warning-text').textContent = text;
+  banner.classList.add('active');
+  setTimeout(() => banner.classList.remove('active'), 3200);
+}
+
+function drawTicker() {
+  const el = document.getElementById('ticker');
+  const arrow = d => d === 'up' ? '▲' : d === 'down' ? '▼' : '—';
+
+  const item = t => `
+    <span class="tick-item">
+      <span>${t.k}</span>
+      <span>${t.v}</span>
+      <span class="${t.d}">${arrow(t.d)}</span>
+      <span class="sep">◆</span>
+    </span>
+  `;
+
+  el.innerHTML = TICKER_ITEMS.map(item).join('') + TICKER_ITEMS.map(item).join('');
+}
+
+function updateMeta() {
+  const eps = 11800 + Math.floor(Math.random() * 4500);
+  document.getElementById('eps-value').textContent = eps.toLocaleString();
+
+  const latency = (2.0 + Math.random() * 0.8).toFixed(1);
+  document.getElementById('latency-value').innerHTML = `${latency}<span class="unit">ms</span>`;
+
+  const agents = 1235 + Math.floor(Math.random() * 30);
+  document.getElementById('agent-count').textContent = agents.toLocaleString();
+}
+
+function spawnAmbient() {
+  const c = document.getElementById('ambient');
+  const dot = document.createElement('div');
+  dot.className = 'dot';
+  dot.style.left = `${Math.random() * 100}vw`;
+  dot.style.animationDuration = `${10 + Math.random() * 15}s`;
+
+  const colors = ['#14ffc4', '#a855f7', '#00d9ff', '#fbbf24'];
+  const color = colors[Math.floor(Math.random() * colors.length)];
+  dot.style.background = color;
+  dot.style.color = color;
+
+  c.appendChild(dot);
+  setTimeout(() => dot.remove(), 25000);
+}
+
+let signalsThisSecond = 0;
+
+function tickSignalCounter() {
+  document.getElementById('signal-count').textContent = `${signalsThisSecond} / sec`;
+  signalsThisSecond = 0;
+}
+
+function init() {
+  drawMapDots();
+  drawCities();
+  drawPositions();
+  drawHedges();
+  drawTicker();
+
+  let newsIdx = Math.floor(Math.random() * NEWS_ITEMS.length);
+  let warnIdx = 0;
+
+  function feedLoop() {
+    const item = NEWS_ITEMS[newsIdx % NEWS_ITEMS.length];
+    addFeedItem(item);
+    signalsThisSecond++;
+    newsIdx++;
+    setTimeout(feedLoop, 950 + Math.random() * 650);
+  }
+  feedLoop();
+
+  function randomPulseLoop() {
+    const city = CITIES[Math.floor(Math.random() * CITIES.length)];
+    const roll = Math.random();
+    const sev = roll < 0.12 ? 'high' : roll < 0.4 ? 'med' : 'low';
+    triggerSignal(city.id, sev);
+    signalsThisSecond++;
+    setTimeout(randomPulseLoop, 380 + Math.random() * 520);
+  }
+  randomPulseLoop();
+
+  setInterval(updatePositions, 480);
+  setInterval(updateHedges, 2200);
+
+  function warnLoop() {
+    addWarning(WARNING_TEXTS[warnIdx % WARNING_TEXTS.length]);
+    warnIdx++;
+    setTimeout(warnLoop, 7600 + Math.random() * 4200);
+  }
+  setTimeout(warnLoop, 3500);
+
+  setInterval(updateMeta, 600);
+  updateMeta();
+
+  setInterval(tickSignalCounter, 1000);
+
+  setInterval(spawnAmbient, 420);
+  for (let i = 0; i < 16; i++) {
+    setTimeout(spawnAmbient, i * 180);
+  }
+
+  setInterval(() => {
+    const d = new Date();
+    const pad = n => n.toString().padStart(2, '0');
+    const utc = `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}`;
+    const coord = document.querySelector('.map-coords');
+    if (coord) coord.textContent = `LAT 40.71° N · LON 74.00° W · UTC ${utc}`;
+  }, 1000);
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+</script>
 </body>
 </html>
